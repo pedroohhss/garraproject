@@ -137,12 +137,28 @@ export default function EditProfilePage() {
     }
     setSaving(true);
     try {
+      let avatarUrl = form.avatar_url.trim() || null;
+
+      // Upload avatar if new file selected
+      if (avatarFile) {
+        setUploadingAvatar(true);
+        const ext = avatarFile.name.split(".").pop() ?? "jpg";
+        const filePath = `${user.id}/avatar.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+        avatarUrl = urlData.publicUrl;
+        setUploadingAvatar(false);
+      }
+
       const { error } = await supabase
         .from("users")
         .update({
           full_name: form.full_name.trim(),
           bio: form.bio.trim() || null,
-          avatar_url: form.avatar_url.trim() || null,
+          avatar_url: avatarUrl,
           linkedin_url: form.linkedin_url.trim() || null,
           sexo: form.sexo || null,
           idade: form.idade ? parseInt(form.idade) : null,
