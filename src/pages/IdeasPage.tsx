@@ -431,7 +431,7 @@ export default function IdeasPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredIdeas.map((idea) => {
             const isOwnIdea = idea.created_by === user?.id;
-            const voted = hasVotedFor(idea.id);
+            const userRating = getUserRating(idea.id);
 
             return (
               <div
@@ -456,93 +456,91 @@ export default function IdeasPage() {
                   por {idea.authorName}
                 </div>
 
-                {/* Action buttons row */}
-                <div className="flex items-center gap-2 pt-2 border-t border-border">
-                  {/* Vote button — always visible for all profiles */}
-                  {voted ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5 flex-1 border-primary/40 text-primary"
-                      onClick={(e) => handleRemoveVote(idea.id, e)}
-                      disabled={votingInProgress === idea.id || isOwnIdea}
-                      title={isOwnIdea ? "Não pode votar na própria ideia" : "Remover voto"}
-                    >
-                      {votingInProgress === idea.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ThumbsUp className="h-3.5 w-3.5 fill-primary" />
-                      )}
-                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5 flex-1"
-                      onClick={(e) => handleVote(idea.id, e)}
-                      disabled={votingInProgress === idea.id || isOwnIdea || totalUserVotes >= MAX_VOTES_PER_USER || !config?.voting_open}
-                      title={
-                        isOwnIdea
-                          ? "Não pode votar na própria ideia"
-                          : !config?.voting_open
-                          ? "Votação fechada"
-                          : totalUserVotes >= MAX_VOTES_PER_USER
-                          ? "Todos os votos usados"
-                          : "Votar nesta ideia"
-                      }
-                    >
-                      {votingInProgress === idea.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ThumbsUp className="h-3.5 w-3.5" />
-                      )}
-                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
-                    </Button>
-                  )}
+                {/* Star rating + average */}
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className="p-0.5 disabled:cursor-not-allowed"
+                        disabled={votingInProgress === idea.id || isOwnIdea || !config?.voting_open}
+                        title={
+                          isOwnIdea
+                            ? "Não pode avaliar a própria ideia"
+                            : !config?.voting_open
+                            ? "Votação fechada"
+                            : `Avaliar com ${star} estrela${star > 1 ? "s" : ""}`
+                        }
+                        onClick={(e) => handleStarRate(idea.id, star, e)}
+                      >
+                        <Star
+                          className={`h-5 w-5 transition-colors ${
+                            star <= userRating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-muted-foreground/40 hover:text-yellow-400/60"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {votingInProgress === idea.id && (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {idea.avgRating > 0
+                      ? `${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})`
+                      : "Sem avaliações"}
+                  </span>
+                </div>
 
-                  {/* Join group button — always visible when group exists */}
-                  {idea.groupId && (
-                    <Button
-                      variant={profile?.group_id === idea.groupId ? "secondary" : "default"}
-                      size="sm"
-                      className="h-8 text-xs gap-1.5"
-                      onClick={(e) => handleJoinGroup(idea, e)}
-                      disabled={
-                        !canJoin ||
-                        !!profile?.group_id ||
-                        (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
-                        joiningGroup === idea.groupId
-                      }
-                      title={
-                        profile?.group_id === idea.groupId
-                          ? "Você já está neste grupo"
-                          : profile?.group_id
-                          ? "Você já pertence a outro grupo"
-                          : !canJoin
-                          ? "Entrada em grupos fechada"
-                          : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
-                          ? "Grupo cheio"
-                          : "Entrar neste grupo"
-                      }
-                    >
-                      {joiningGroup === idea.groupId ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : profile?.group_id === idea.groupId ? (
-                        <Users className="h-3.5 w-3.5" />
-                      ) : (
-                        <UserPlus className="h-3.5 w-3.5" />
-                      )}
-                      {profile?.group_id === idea.groupId
-                        ? "Meu grupo"
-                        : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
-                    </Button>
-                  )}
+                {/* Join group + Admin actions */}
+                <div className="flex items-center gap-2">
+                  {/* Join group button — always visible */}
+                  <Button
+                    variant={profile?.group_id === idea.groupId && idea.groupId ? "secondary" : "default"}
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={(e) => handleJoinGroup(idea, e)}
+                    disabled={
+                      !idea.groupId ||
+                      !canJoin ||
+                      !!profile?.group_id ||
+                      (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
+                      joiningGroup === idea.groupId
+                    }
+                    title={
+                      !idea.groupId
+                        ? "Grupo ainda não formado"
+                        : profile?.group_id === idea.groupId
+                        ? "Você já está neste grupo"
+                        : profile?.group_id
+                        ? "Você já pertence a outro grupo"
+                        : !canJoin
+                        ? "Entrada em grupos fechada"
+                        : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
+                        ? "Grupo cheio"
+                        : "Entrar neste grupo"
+                    }
+                  >
+                    {joiningGroup === idea.groupId ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : profile?.group_id === idea.groupId && idea.groupId ? (
+                      <Users className="h-3.5 w-3.5" />
+                    ) : (
+                      <UserPlus className="h-3.5 w-3.5" />
+                    )}
+                    {!idea.groupId
+                      ? "Sem grupo"
+                      : profile?.group_id === idea.groupId
+                      ? "Meu grupo"
+                      : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
+                  </Button>
 
                   {/* Admin actions */}
                   {isAdmin && (
                     <>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openEditDialog(idea, e)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button
