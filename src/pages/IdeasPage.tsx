@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import CargoSelectDialog, { CARGOS } from "@/components/CargoSelectDialog";
 
 interface Idea {
   id: string;
@@ -32,7 +33,13 @@ interface Idea {
   avgRating: number;
   groupId?: string | null;
   groupName?: string | null;
-  groupMemberCount?: number;
+  groupMembers: GroupMember[];
+}
+
+interface GroupMember {
+  user_id: string;
+  cargo: string;
+  full_name: string;
 }
 
 interface VoteRow {
@@ -68,11 +75,16 @@ export default function IdeasPage() {
   const [loading, setLoading] = useState(true);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [detailIdea, setDetailIdea] = useState<Idea | null>(null);
-  const [detailMembers, setDetailMembers] = useState<string[]>([]);
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [saving, setSaving] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<string | null>(null);
-  const [joiningGroup, setJoiningGroup] = useState<string | null>(null);
+
+  // Cargo selection
+  const [cargoDialogOpen, setCargoDialogOpen] = useState(false);
+  const [cargoTargetIdea, setCargoTargetIdea] = useState<Idea | null>(null);
+
+  // User's own membership
+  const [userMembership, setUserMembership] = useState<{ group_id: string; cargo: string } | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -88,7 +100,7 @@ export default function IdeasPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [ideasRes, configRes, votesRes] = await Promise.all([
+      const [ideasRes, configRes, votesRes, membersRes] = await Promise.all([
         supabase
           .from("ideas")
           .select("id, title, description, problem, category, created_by, created_at")
@@ -99,10 +111,12 @@ export default function IdeasPage() {
           .limit(1)
           .maybeSingle(),
         supabase.from("votes").select("*"),
+        supabase.from("group_members").select("group_id, user_id, cargo"),
       ]);
 
       const rawIdeas = ideasRes.data ?? [];
       const allVotes = votesRes.data ?? [];
+      const allMembers = (membersRes.data ?? []) as { group_id: string; user_id: string; cargo: string }[];
 
       setConfig(configRes.data ? {
         ideas_open: configRes.data.ideas_open ?? false,
@@ -111,13 +125,14 @@ export default function IdeasPage() {
         groups_confirmed: configRes.data.groups_confirmed ?? false,
       } : null);
 
-      // User's own votes
       if (user) {
         setUserVotes(allVotes.filter((v) => v.user_id === user.id));
         setUserIdeaCount(rawIdeas.filter((i) => i.created_by === user.id).length);
+        const myMembership = allMembers.find((m) => m.user_id === user.id);
+        setUserMembership(myMembership ? { group_id: myMembership.group_id, cargo: myMembership.cargo } : null);
       }
 
-      // Vote counts and averages per idea
+      // Vote counts/averages
       const voteCountMap = new Map<string, number>();
       const voteSumMap = new Map<string, number>();
       allVotes.forEach((v) => {
@@ -127,11 +142,13 @@ export default function IdeasPage() {
         }
       });
 
-      // Author names
+      // Author names + member names
       const authorIds = [...new Set(rawIdeas.map((i) => i.created_by).filter(Boolean))] as string[];
+      const memberUserIds = [...new Set(allMembers.map((m) => m.user_id))];
+      const allUserIds = [...new Set([...authorIds, ...memberUserIds])];
       let nameMap = new Map<string, string>();
-      if (authorIds.length > 0) {
-        const { data: usersData } = await supabase.from("users").select("id, full_name").in("id", authorIds);
+      if (allUserIds.length > 0) {
+        const { data: usersData } = await supabase.from("users").select("id, full_name").in("id", allUserIds);
         nameMap = new Map((usersData ?? []).map((u) => [u.id, u.full_name]));
       }
 
@@ -139,20 +156,13 @@ export default function IdeasPage() {
       const { data: groupsData } = await supabase.from("groups").select("id, name, idea_id");
       const groupByIdea = new Map((groupsData ?? []).map((g) => [g.idea_id, { id: g.id, name: g.name }]));
 
-      // Member counts per group
-      let memberCountMap = new Map<string, number>();
-      if (groupsData && groupsData.length > 0) {
-        const groupIds = groupsData.map((g) => g.id);
-        const { data: membersData } = await supabase
-          .from("users")
-          .select("group_id")
-          .in("group_id", groupIds);
-        (membersData ?? []).forEach((m) => {
-          if (m.group_id) {
-            memberCountMap.set(m.group_id, (memberCountMap.get(m.group_id) ?? 0) + 1);
-          }
-        });
-      }
+      // Members per group
+      const membersByGroup = new Map<string, GroupMember[]>();
+      allMembers.forEach((m) => {
+        const list = membersByGroup.get(m.group_id) ?? [];
+        list.push({ user_id: m.user_id, cargo: m.cargo, full_name: nameMap.get(m.user_id) ?? "—" });
+        membersByGroup.set(m.group_id, list);
+      });
 
       const enriched: Idea[] = rawIdeas.map((i) => {
         const group = groupByIdea.get(i.id);
@@ -165,7 +175,7 @@ export default function IdeasPage() {
           avgRating: count > 0 ? sum / count : 0,
           groupId: group?.id ?? null,
           groupName: group?.name ?? null,
-          groupMemberCount: group ? (memberCountMap.get(group.id) ?? 0) : 0,
+          groupMembers: group ? (membersByGroup.get(group.id) ?? []) : [],
         };
       });
 
@@ -182,7 +192,6 @@ export default function IdeasPage() {
     fetchData().finally(() => clearTimeout(timeout));
   }, [fetchData]);
 
-  // Filtered ideas
   const filteredIdeas = useMemo(() => {
     let result = ideas;
     if (searchText.trim()) {
@@ -195,27 +204,17 @@ export default function IdeasPage() {
     return result;
   }, [ideas, searchText, filterCategory]);
 
-  // Vote helpers
-  const totalUserVotes = useMemo(
-    () => userVotes.length,
-    [userVotes]
-  );
+  const totalUserVotes = useMemo(() => userVotes.length, [userVotes]);
   const getUserRating = useCallback(
-    (ideaId: string) => {
-      const vote = userVotes.find((v) => v.idea_id === ideaId);
-      return vote?.quantity ?? 0;
-    },
+    (ideaId: string) => userVotes.find((v) => v.idea_id === ideaId)?.quantity ?? 0,
     [userVotes]
   );
 
-  // Form helpers
   const resetForm = () => {
     setTitle(""); setDescription(""); setCategory(""); setProblem("");
     setEditingIdea(null);
   };
-
   const openNewDialog = () => { resetForm(); setFormDialogOpen(true); };
-
   const openEditDialog = (idea: Idea, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingIdea(idea);
@@ -236,22 +235,14 @@ export default function IdeasPage() {
       if (editingIdea) {
         const { error } = await supabase
           .from("ideas")
-          .update({
-            title: title.trim(),
-            description: description.trim(),
-            category,
-            problem: problem.trim() || null,
-          })
+          .update({ title: title.trim(), description: description.trim(), category, problem: problem.trim() || null })
           .eq("id", editingIdea.id);
         if (error) throw error;
         toast({ title: "Ideia atualizada" });
       } else {
         const { error } = await supabase.from("ideas").insert({
-          title: title.trim(),
-          description: description.trim(),
-          category,
-          problem: problem.trim() || null,
-          created_by: user!.id,
+          title: title.trim(), description: description.trim(), category,
+          problem: problem.trim() || null, created_by: user!.id,
         });
         if (error) throw error;
         toast({ title: "Ideia cadastrada" });
@@ -278,7 +269,6 @@ export default function IdeasPage() {
     }
   };
 
-  // Star rating
   const handleStarRate = async (ideaId: string, rating: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || votingInProgress) return;
@@ -293,15 +283,12 @@ export default function IdeasPage() {
     }
     setVotingInProgress(ideaId);
     try {
-      // Delete existing vote for this idea, then insert new one
       const existingVote = userVotes.find((v) => v.idea_id === ideaId);
       if (existingVote) {
         await supabase.from("votes").delete().eq("id", existingVote.id);
       }
       const { error } = await supabase.from("votes").insert({
-        idea_id: ideaId,
-        user_id: user.id,
-        quantity: rating,
+        idea_id: ideaId, user_id: user.id, quantity: rating,
       });
       if (error) throw error;
       await fetchData();
@@ -312,49 +299,49 @@ export default function IdeasPage() {
     }
   };
 
-  // Join group
-  const handleJoinGroup = async (idea: Idea, e: React.MouseEvent) => {
+  // Open cargo selection dialog
+  const handleJoinClick = (idea: Idea, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || !idea.groupId) return;
-    if (profile?.group_id) {
+    if (userMembership) {
       toast({ title: "Você já pertence a um grupo", variant: "destructive" });
       return;
     }
-    if ((idea.groupMemberCount ?? 0) >= MAX_PER_GROUP) {
+    if (idea.groupMembers.length >= MAX_PER_GROUP) {
       toast({ title: "Grupo já está cheio (5 membros)", variant: "destructive" });
       return;
     }
-    setJoiningGroup(idea.groupId);
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({ group_id: idea.groupId })
-        .eq("id", user.id);
-      if (error) throw error;
-      toast({ title: "Você entrou no grupo!" });
-      await fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro ao entrar no grupo", description: err.message, variant: "destructive" });
-    } finally {
-      setJoiningGroup(null);
-    }
+    setCargoTargetIdea(idea);
+    setCargoDialogOpen(true);
   };
 
-  // Detail modal
-  const openDetail = async (idea: Idea) => {
+  const handleConfirmCargo = async (cargo: string) => {
+    if (!user || !cargoTargetIdea?.groupId) return;
+    const { error } = await supabase.from("group_members").insert({
+      group_id: cargoTargetIdea.groupId,
+      user_id: user.id,
+      cargo,
+    } as any);
+    if (error) throw error;
+    // Also update legacy group_id on users table
+    await supabase.from("users").update({ group_id: cargoTargetIdea.groupId }).eq("id", user.id);
+    toast({ title: "Você entrou no grupo!" });
+    setLoading(true);
+    await fetchData();
+  };
+
+  const openDetail = (idea: Idea) => {
     setDetailIdea(idea);
-    setDetailMembers([]);
-    if (idea.groupId) {
-      const { data } = await supabase
-        .from("users")
-        .select("full_name")
-        .eq("group_id", idea.groupId);
-      setDetailMembers((data ?? []).map((u) => u.full_name));
-    }
   };
 
   const reachedLimit = userIdeaCount >= MAX_IDEAS_PER_USER;
   const canJoin = config?.joining_open && config?.groups_confirmed;
+
+  // Cargo badge colors
+  const cargoColor = (cargo: string) => {
+    const info = CARGOS.find((c) => c.value === cargo);
+    return info?.required ? "default" : "secondary";
+  };
 
   return (
     <DashboardLayout title="Ideias">
@@ -366,7 +353,6 @@ export default function IdeasPage() {
             <span className="ml-2">· {totalUserVotes}/{MAX_VOTES_PER_USER} votos usados</span>
           )}
         </p>
-
         {config?.ideas_open ? (
           reachedLimit && !isAdmin ? (
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -388,22 +374,13 @@ export default function IdeasPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Buscar por nome da ideia..."
-            className="pl-9"
-          />
+          <Input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Buscar por nome da ideia..." className="pl-9" />
         </div>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas categorias</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-            ))}
+            {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -432,6 +409,7 @@ export default function IdeasPage() {
           {filteredIdeas.map((idea) => {
             const isOwnIdea = idea.created_by === user?.id;
             const userRating = getUserRating(idea.id);
+            const occupiedCargos = idea.groupMembers.map((m) => m.cargo);
 
             return (
               <div
@@ -442,9 +420,7 @@ export default function IdeasPage() {
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-foreground font-medium leading-tight">{idea.title}</h3>
                   {idea.category && (
-                    <Badge variant="secondary" className="shrink-0 capitalize text-xs">
-                      {idea.category}
-                    </Badge>
+                    <Badge variant="secondary" className="shrink-0 capitalize text-xs">{idea.category}</Badge>
                   )}
                 </div>
 
@@ -452,11 +428,35 @@ export default function IdeasPage() {
                   <p className="text-sm text-muted-foreground line-clamp-3">{idea.description}</p>
                 )}
 
-                <div className="text-xs text-muted-foreground pt-1">
-                  por {idea.authorName}
-                </div>
+                <div className="text-xs text-muted-foreground pt-1">por {idea.authorName}</div>
 
-                {/* Star rating + average */}
+                {/* Cargo slots */}
+                {idea.groupId && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {CARGOS.map((cargo) => {
+                      const member = idea.groupMembers.find((m) => m.cargo === cargo.value);
+                      const Icon = cargo.icon;
+                      return (
+                        <div
+                          key={cargo.value}
+                          className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${
+                            member
+                              ? "bg-primary/10 border-primary/30 text-primary"
+                              : cargo.required
+                              ? "bg-destructive/10 border-destructive/30 text-destructive"
+                              : "bg-muted border-border text-muted-foreground"
+                          }`}
+                          title={member ? `${cargo.label}: ${member.full_name}` : `${cargo.label}: Vago`}
+                        >
+                          <Icon className="h-3 w-3" />
+                          <span>{member ? member.full_name.split(" ")[0] : "Vago"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Star rating */}
                 <div className="flex items-center gap-3 pt-2 border-t border-border">
                   <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -465,90 +465,62 @@ export default function IdeasPage() {
                         type="button"
                         className="p-0.5 disabled:cursor-not-allowed"
                         disabled={votingInProgress === idea.id || isOwnIdea || !config?.voting_open}
-                        title={
-                          isOwnIdea
-                            ? "Não pode avaliar a própria ideia"
-                            : !config?.voting_open
-                            ? "Votação fechada"
-                            : `Avaliar com ${star} estrela${star > 1 ? "s" : ""}`
-                        }
                         onClick={(e) => handleStarRate(idea.id, star, e)}
                       >
-                        <Star
-                          className={`h-5 w-5 transition-colors ${
-                            star <= userRating
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-muted-foreground/40 hover:text-yellow-400/60"
-                          }`}
-                        />
+                        <Star className={`h-5 w-5 transition-colors ${
+                          star <= userRating
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-muted-foreground/40 hover:text-yellow-400/60"
+                        }`} />
                       </button>
                     ))}
-                    {votingInProgress === idea.id && (
-                      <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />
-                    )}
+                    {votingInProgress === idea.id && <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {idea.avgRating > 0
-                      ? `${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})`
-                      : "Sem avaliações"}
+                    {idea.avgRating > 0 ? `${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})` : "Sem avaliações"}
                   </span>
                 </div>
 
                 {/* Join group + Admin actions */}
                 <div className="flex items-center gap-2">
-                  {/* Join group button — always visible */}
                   <Button
-                    variant={profile?.group_id === idea.groupId && idea.groupId ? "secondary" : "default"}
+                    variant={userMembership?.group_id === idea.groupId && idea.groupId ? "secondary" : "default"}
                     size="sm"
                     className="h-8 text-xs gap-1.5"
-                    onClick={(e) => handleJoinGroup(idea, e)}
+                    onClick={(e) => handleJoinClick(idea, e)}
                     disabled={
                       !idea.groupId ||
                       !canJoin ||
-                      !!profile?.group_id ||
-                      (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
-                      joiningGroup === idea.groupId
+                      !!userMembership ||
+                      idea.groupMembers.length >= MAX_PER_GROUP
                     }
                     title={
-                      !idea.groupId
-                        ? "Grupo ainda não formado"
-                        : profile?.group_id === idea.groupId
-                        ? "Você já está neste grupo"
-                        : profile?.group_id
-                        ? "Você já pertence a outro grupo"
-                        : !canJoin
-                        ? "Entrada em grupos fechada"
-                        : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
-                        ? "Grupo cheio"
+                      !idea.groupId ? "Grupo ainda não formado"
+                        : userMembership?.group_id === idea.groupId ? "Você já está neste grupo"
+                        : userMembership ? "Você já pertence a outro grupo"
+                        : !canJoin ? "Entrada em grupos fechada"
+                        : idea.groupMembers.length >= MAX_PER_GROUP ? "Grupo cheio"
                         : "Entrar neste grupo"
                     }
                   >
-                    {joiningGroup !== null && joiningGroup === idea.groupId ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : profile?.group_id === idea.groupId && idea.groupId ? (
+                    {userMembership?.group_id === idea.groupId && idea.groupId ? (
                       <Users className="h-3.5 w-3.5" />
                     ) : (
                       <UserPlus className="h-3.5 w-3.5" />
                     )}
                     {!idea.groupId
                       ? "Sem grupo"
-                      : profile?.group_id === idea.groupId
+                      : userMembership?.group_id === idea.groupId
                       ? "Meu grupo"
-                      : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
+                      : `Entrar (${idea.groupMembers.length}/${MAX_PER_GROUP})`}
                   </Button>
 
-                  {/* Admin actions */}
                   {isAdmin && (
                     <>
                       <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={(e) => handleDelete(idea.id, e)}
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => handleDelete(idea.id, e)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </>
@@ -558,6 +530,17 @@ export default function IdeasPage() {
             );
           })}
         </div>
+      )}
+
+      {/* Cargo selection dialog */}
+      {cargoTargetIdea && (
+        <CargoSelectDialog
+          open={cargoDialogOpen}
+          onOpenChange={setCargoDialogOpen}
+          occupiedCargos={cargoTargetIdea.groupMembers.map((m) => m.cargo)}
+          onConfirm={handleConfirmCargo}
+          groupName={cargoTargetIdea.groupName ?? "Grupo"}
+        />
       )}
 
       {/* Create / Edit dialog */}
@@ -581,9 +564,7 @@ export default function IdeasPage() {
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
+                  {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -612,30 +593,25 @@ export default function IdeasPage() {
                 {detailIdea.category && (
                   <Badge variant="secondary" className="capitalize">{detailIdea.category}</Badge>
                 )}
-
                 {detailIdea.description && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Descrição</p>
                     <p className="text-sm text-foreground">{detailIdea.description}</p>
                   </div>
                 )}
-
                 {detailIdea.problem && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Problema que resolve</p>
                     <p className="text-sm text-foreground">{detailIdea.problem}</p>
                   </div>
                 )}
-
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" /> por {detailIdea.authorName}
                   </span>
                   <span className="flex items-center gap-1">
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    {detailIdea.created_at
-                      ? new Date(detailIdea.created_at).toLocaleDateString("pt-BR")
-                      : "—"}
+                    {detailIdea.created_at ? new Date(detailIdea.created_at).toLocaleDateString("pt-BR") : "—"}
                   </span>
                   <span className="flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
@@ -645,21 +621,51 @@ export default function IdeasPage() {
                   </span>
                 </div>
 
+                {/* Group members with cargo */}
                 {detailIdea.groupName && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Grupo: {detailIdea.groupName} ({detailIdea.groupMemberCount}/{MAX_PER_GROUP} membros)
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Grupo: {detailIdea.groupName} ({detailIdea.groupMembers.length}/{MAX_PER_GROUP} membros)
                     </p>
-                    {detailMembers.length > 0 && (
-                      <ul className="text-sm text-foreground space-y-1">
-                        {detailMembers.map((name, idx) => (
-                          <li key={idx} className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                            {name}
-                          </li>
-                        ))}
-                      </ul>
+                    {detailIdea.groupMembers.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {detailIdea.groupMembers.map((member) => {
+                          const cargoInfo = CARGOS.find((c) => c.value === member.cargo);
+                          return (
+                            <div key={member.user_id} className="flex items-center gap-2 text-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                              <span className="text-foreground">{member.full_name}</span>
+                              <Badge variant={cargoColor(member.cargo)} className="text-[10px] px-1.5 py-0 capitalize">
+                                {cargoInfo?.label ?? member.cargo}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nenhum membro ainda.</p>
                     )}
+
+                    {/* Vacant required cargos */}
+                    {(() => {
+                      const vacant = CARGOS.filter((c) => c.required && !detailIdea.groupMembers.some((m) => m.cargo === c.value));
+                      if (vacant.length === 0) return null;
+                      return (
+                        <div className="mt-2">
+                          <p className="text-xs text-destructive mb-1">Cargos obrigatórios vagos:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {vacant.map((c) => {
+                              const Icon = c.icon;
+                              return (
+                                <span key={c.value} className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 border border-destructive/30 text-destructive">
+                                  <Icon className="h-3 w-3" /> {c.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

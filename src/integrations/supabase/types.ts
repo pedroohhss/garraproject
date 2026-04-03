@@ -230,6 +230,38 @@ export type Database = {
           },
         ]
       }
+      group_members: {
+        Row: {
+          cargo: Database["public"]["Enums"]["group_cargo"]
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          cargo: Database["public"]["Enums"]["group_cargo"]
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          cargo?: Database["public"]["Enums"]["group_cargo"]
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string | null
@@ -357,30 +389,39 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string | null
           email: string
           full_name: string
           group_id: string | null
           id: string
           is_active: boolean | null
+          linkedin_url: string | null
           role: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           email: string
           full_name: string
           group_id?: string | null
           id: string
           is_active?: boolean | null
+          linkedin_url?: string | null
           role?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           email?: string
           full_name?: string
           group_id?: string | null
           id?: string
           is_active?: boolean | null
+          linkedin_url?: string | null
           role?: string | null
         }
         Relationships: [
@@ -471,7 +512,12 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      group_cargo:
+        | "fundador"
+        | "estrategista"
+        | "construtor"
+        | "closer"
+        | "analista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -598,6 +644,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      group_cargo: [
+        "fundador",
+        "estrategista",
+        "construtor",
+        "closer",
+        "analista",
+      ],
+    },
   },
 } as const

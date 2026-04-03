@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Layers, Calendar, UserCheck, Settings2 } from "lucide-react";
+import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 interface Stats {
@@ -28,9 +29,12 @@ interface GroupRow {
   leader_id: string | null;
   representativeName?: string;
   leaderName?: string;
+  memberCount: number;
+  missingRequired: string[];
 }
 
 const MAX_PARTICIPANTS = 75;
+const REQUIRED_CARGOS = ["fundador", "estrategista", "construtor"];
 
 const TOGGLE_ITEMS: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] = [
   { key: "registration_open", label: "Cadastro aberto" },
@@ -49,15 +53,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     const load = async () => {
       const timeout = setTimeout(() => setLoading(false), 8000);
-
       try {
-        const [participantsRes, groupsCountRes, weeksRes, configRes, groupsRes] =
+        const [participantsRes, groupsCountRes, weeksRes, configRes, groupsRes, membersRes] =
           await Promise.all([
             supabase.rpc("get_participant_count"),
             supabase.from("groups").select("id", { count: "exact", head: true }),
             supabase.from("weeks").select("number").eq("is_active", true).maybeSingle(),
             supabase.from("challenge_config").select("*").limit(1).maybeSingle(),
             supabase.from("groups").select("id, name, representative_id, leader_id"),
+            supabase.from("group_members").select("group_id, user_id, cargo"),
           ]);
 
         const participantCount = (participantsRes.data as number) ?? 0;
@@ -80,27 +84,42 @@ export default function AdminDashboard() {
           });
         }
 
-        // Enrich groups with user names
         const rawGroups = groupsRes.data ?? [];
+        const allMembers = (membersRes.data ?? []) as { group_id: string; user_id: string; cargo: string }[];
+
+        // Members per group
+        const membersByGroup = new Map<string, { user_id: string; cargo: string }[]>();
+        allMembers.forEach((m) => {
+          const list = membersByGroup.get(m.group_id) ?? [];
+          list.push(m);
+          membersByGroup.set(m.group_id, list);
+        });
+
+        // Enrich groups with user names
         if (rawGroups.length > 0) {
           const userIds = [
             ...rawGroups.map((g) => g.representative_id),
             ...rawGroups.map((g) => g.leader_id),
           ].filter(Boolean) as string[];
-
           const uniqueIds = [...new Set(userIds)];
           const { data: usersData } = uniqueIds.length > 0
             ? await supabase.from("users").select("id, full_name").in("id", uniqueIds)
             : { data: [] as { id: string; full_name: string }[] };
-
           const nameMap = new Map((usersData ?? []).map((u) => [u.id, u.full_name]));
 
           setGroups(
-            rawGroups.map((g) => ({
-              ...g,
-              representativeName: g.representative_id ? nameMap.get(g.representative_id) ?? "—" : "—",
-              leaderName: g.leader_id ? nameMap.get(g.leader_id) ?? "—" : "—",
-            }))
+            rawGroups.map((g) => {
+              const members = membersByGroup.get(g.id) ?? [];
+              const occupiedCargos = members.map((m) => m.cargo);
+              const missingRequired = REQUIRED_CARGOS.filter((c) => !occupiedCargos.includes(c));
+              return {
+                ...g,
+                representativeName: g.representative_id ? nameMap.get(g.representative_id) ?? "—" : "—",
+                leaderName: g.leader_id ? nameMap.get(g.leader_id) ?? "—" : "—",
+                memberCount: members.length,
+                missingRequired,
+              };
+            })
           );
         } else {
           setGroups([]);
@@ -120,17 +139,12 @@ export default function AdminDashboard() {
   const handleToggle = useCallback(
     async (key: keyof Omit<ChallengeConfig, "id">, value: boolean) => {
       if (!config) return;
-
-      // Optimistic update
       setConfig((prev) => (prev ? { ...prev, [key]: value } : prev));
-
       const { error } = await supabase
         .from("challenge_config")
         .update({ [key]: value })
         .eq("id", config.id);
-
       if (error) {
-        // Revert
         setConfig((prev) => (prev ? { ...prev, [key]: !value } : prev));
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       }
@@ -147,7 +161,6 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout title="Painel Admin">
-      {/* Top cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
           <div key={card.label} className="glass-card p-6 space-y-3">
@@ -164,13 +177,11 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Challenge control toggles */}
       <div className="mt-6 glass-card p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <Settings2 className="h-4 w-4 text-primary" />
           <span className="section-label">Controle do Desafio</span>
         </div>
-
         {loading || !config ? (
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -180,22 +191,15 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-3">
             {TOGGLE_ITEMS.map((item) => (
-              <div
-                key={item.key}
-                className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors"
-              >
+              <div key={item.key} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
                 <span className="text-sm text-foreground">{item.label}</span>
-                <Switch
-                  checked={config[item.key] as boolean}
-                  onCheckedChange={(val) => handleToggle(item.key, val)}
-                />
+                <Switch checked={config[item.key] as boolean} onCheckedChange={(val) => handleToggle(item.key, val)} />
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Groups table */}
       <div className="mt-6 glass-card overflow-hidden">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -203,7 +207,6 @@ export default function AdminDashboard() {
             <span className="section-label">Todos os Grupos</span>
           </div>
         </div>
-
         {loading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3].map((i) => (
@@ -221,16 +224,28 @@ export default function AdminDashboard() {
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="text-left px-4 py-3 font-medium">Nome</th>
-                  <th className="text-left px-4 py-3 font-medium">Representante</th>
-                  <th className="text-left px-4 py-3 font-medium">Líder</th>
+                  <th className="text-left px-4 py-3 font-medium">Membros</th>
+                  <th className="text-left px-4 py-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {groups.map((group) => (
                   <tr key={group.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                     <td className="px-4 py-3 text-foreground font-medium">{group.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{group.representativeName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{group.leaderName}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{group.memberCount}/5</td>
+                    <td className="px-4 py-3">
+                      {group.missingRequired.length === 0 ? (
+                        <Badge variant="default" className="gap-1 text-xs">
+                          <CheckCircle2 className="h-3 w-3" /> Completo
+                        </Badge>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="destructive" className="gap-1 text-xs">
+                            <AlertTriangle className="h-3 w-3" /> Falta: {group.missingRequired.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}
+                          </Badge>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
