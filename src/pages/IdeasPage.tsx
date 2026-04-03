@@ -64,6 +64,7 @@ const MAX_PER_GROUP = 5;
 
 export default function IdeasPage() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [config, setConfig] = useState<{
     ideas_open: boolean;
