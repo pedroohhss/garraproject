@@ -117,11 +117,13 @@ export default function IdeasPage() {
         setUserIdeaCount(rawIdeas.filter((i) => i.created_by === user.id).length);
       }
 
-      // Vote counts per idea
+      // Vote counts and averages per idea
       const voteCountMap = new Map<string, number>();
+      const voteSumMap = new Map<string, number>();
       allVotes.forEach((v) => {
         if (v.idea_id) {
-          voteCountMap.set(v.idea_id, (voteCountMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
+          voteCountMap.set(v.idea_id, (voteCountMap.get(v.idea_id) ?? 0) + 1);
+          voteSumMap.set(v.idea_id, (voteSumMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
         }
       });
 
