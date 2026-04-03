@@ -8,27 +8,48 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import LiderDashboard from "./pages/LiderDashboard";
+import ParticipanteDashboard from "./pages/ParticipanteDashboard";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-function RoleRedirect() {
-  const { user, profile, loading, signOut } = useAuth();
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
-  if (!user) return <Navigate to="/login" replace />;
-
-  // TODO: add dashboard routes per role
+function LoadingScreen() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-foreground gap-4">
-      <p>Olá, {profile?.full_name ?? "..."}! Dashboard em construção.</p>
-      <button onClick={() => signOut()} className="text-sm text-primary hover:underline">Sair</button>
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="animate-spin h-8 w-8 text-primary" />
     </div>
   );
 }
 
+function RoleRedirect() {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  const role = profile?.role;
+  if (role === "admin") return <Navigate to="/admin" replace />;
+  if (role === "lider") return <Navigate to="/lider" replace />;
+  return <Navigate to="/participante" replace />;
+}
+
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  const role = profile?.role ?? "participante";
+  if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
+  if (loading) return <LoadingScreen />;
   if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -41,10 +62,23 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Role-based redirect */}
             <Route path="/" element={<RoleRedirect />} />
+
+            {/* Public routes */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/cadastro" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+
+            {/* Lider routes */}
+            <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
+
+            {/* Participante / Representante routes */}
+            <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
