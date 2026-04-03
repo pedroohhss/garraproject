@@ -523,7 +523,7 @@ export default function IdeasPage() {
                         : "Entrar neste grupo"
                     }
                   >
-                    {joiningGroup === idea.groupId ? (
+                    {joiningGroup !== null && joiningGroup === idea.groupId ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : profile?.group_id === idea.groupId && idea.groupId ? (
                       <Users className="h-3.5 w-3.5" />
