@@ -26,8 +26,11 @@ interface NavItem {
 const navByRole: Record<string, NavItem[]> = {
   admin: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-    { label: "Participantes", icon: Users, path: "/admin/participantes" },
+    { label: "Usuários", icon: Users, path: "/admin/usuarios" },
+    { label: "Grupos", icon: Layers, path: "/admin/grupos" },
     { label: "Semanas", icon: Calendar, path: "/admin/semanas" },
+    { label: "Atividades", icon: ClipboardList, path: "/admin/atividades" },
+    { label: "Materiais", icon: BookOpen, path: "/admin/materiais" },
     { label: "Configurações", icon: Settings, path: "/admin/config" },
   ],
   lider: [
