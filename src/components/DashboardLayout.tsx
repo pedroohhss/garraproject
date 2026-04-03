@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { User } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
