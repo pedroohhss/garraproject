@@ -77,6 +77,19 @@ export default function DashboardAdmin() {
     toast.success("Configuração atualizada");
   };
 
+  if (loadError) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <GlassCard className="text-center p-8">
+            <p className="text-destructive mb-4">{loadError}</p>
+            <button onClick={() => window.location.reload()} className="text-primary hover:underline text-sm">Recarregar</button>
+          </GlassCard>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="mb-8">
