@@ -38,14 +38,16 @@ function RoleRedirect() {
   return <Navigate to="/participante" replace />;
 }
 
-function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
 
-  const role = profile?.role ?? "participante";
-  if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  if (allowedRoles) {
+    const role = profile?.role ?? "participante";
+    if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  }
 
   return <>{children}</>;
 }
