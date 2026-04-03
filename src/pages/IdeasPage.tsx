@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Lightbulb, Plus, Pencil, Trash2, Loader2, Lock,
-  ThumbsUp, ThumbsDown, Search, Users, Calendar as CalendarIcon, UserPlus,
+  Star, Search, Users, Calendar as CalendarIcon, UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ interface Idea {
   created_at: string | null;
   authorName?: string;
   voteCount: number;
+  avgRating: number;
   groupId?: string | null;
   groupName?: string | null;
   groupMemberCount?: number;
@@ -116,11 +117,13 @@ export default function IdeasPage() {
         setUserIdeaCount(rawIdeas.filter((i) => i.created_by === user.id).length);
       }
 
-      // Vote counts per idea
+      // Vote counts and averages per idea
       const voteCountMap = new Map<string, number>();
+      const voteSumMap = new Map<string, number>();
       allVotes.forEach((v) => {
         if (v.idea_id) {
-          voteCountMap.set(v.idea_id, (voteCountMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
+          voteCountMap.set(v.idea_id, (voteCountMap.get(v.idea_id) ?? 0) + 1);
+          voteSumMap.set(v.idea_id, (voteSumMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
         }
       });
 
@@ -153,10 +156,13 @@ export default function IdeasPage() {
 
       const enriched: Idea[] = rawIdeas.map((i) => {
         const group = groupByIdea.get(i.id);
+        const count = voteCountMap.get(i.id) ?? 0;
+        const sum = voteSumMap.get(i.id) ?? 0;
         return {
           ...i,
           authorName: i.created_by ? nameMap.get(i.created_by) ?? "Desconhecido" : "Desconhecido",
-          voteCount: voteCountMap.get(i.id) ?? 0,
+          voteCount: count,
+          avgRating: count > 0 ? sum / count : 0,
           groupId: group?.id ?? null,
           groupName: group?.name ?? null,
           groupMemberCount: group ? (memberCountMap.get(group.id) ?? 0) : 0,
@@ -191,11 +197,14 @@ export default function IdeasPage() {
 
   // Vote helpers
   const totalUserVotes = useMemo(
-    () => userVotes.reduce((sum, v) => sum + (v.quantity ?? 1), 0),
+    () => userVotes.length,
     [userVotes]
   );
-  const hasVotedFor = useCallback(
-    (ideaId: string) => userVotes.some((v) => v.idea_id === ideaId),
+  const getUserRating = useCallback(
+    (ideaId: string) => {
+      const vote = userVotes.find((v) => v.idea_id === ideaId);
+      return vote?.quantity ?? 0;
+    },
     [userVotes]
   );
 
@@ -269,42 +278,35 @@ export default function IdeasPage() {
     }
   };
 
-  // Voting
-  const handleVote = async (ideaId: string, e: React.MouseEvent) => {
+  // Star rating
+  const handleStarRate = async (ideaId: string, rating: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || votingInProgress) return;
-    if (totalUserVotes >= MAX_VOTES_PER_USER) {
-      toast({ title: "Você já usou todos os 5 votos", variant: "destructive" });
+    if (!config?.voting_open) {
+      toast({ title: "Votação fechada", variant: "destructive" });
+      return;
+    }
+    const isOwnIdea = ideas.find((i) => i.id === ideaId)?.created_by === user.id;
+    if (isOwnIdea) {
+      toast({ title: "Não pode avaliar a própria ideia", variant: "destructive" });
       return;
     }
     setVotingInProgress(ideaId);
     try {
+      // Delete existing vote for this idea, then insert new one
+      const existingVote = userVotes.find((v) => v.idea_id === ideaId);
+      if (existingVote) {
+        await supabase.from("votes").delete().eq("id", existingVote.id);
+      }
       const { error } = await supabase.from("votes").insert({
         idea_id: ideaId,
         user_id: user.id,
-        quantity: 1,
+        quantity: rating,
       });
       if (error) throw error;
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao votar", description: err.message, variant: "destructive" });
-    } finally {
-      setVotingInProgress(null);
-    }
-  };
-
-  const handleRemoveVote = async (ideaId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user || votingInProgress) return;
-    const vote = userVotes.find((v) => v.idea_id === ideaId);
-    if (!vote) return;
-    setVotingInProgress(ideaId);
-    try {
-      const { error } = await supabase.from("votes").delete().eq("id", vote.id);
-      if (error) throw error;
-      await fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro ao remover voto", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao avaliar", description: err.message, variant: "destructive" });
     } finally {
       setVotingInProgress(null);
     }
@@ -429,7 +431,7 @@ export default function IdeasPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredIdeas.map((idea) => {
             const isOwnIdea = idea.created_by === user?.id;
-            const voted = hasVotedFor(idea.id);
+            const userRating = getUserRating(idea.id);
 
             return (
               <div
@@ -454,93 +456,91 @@ export default function IdeasPage() {
                   por {idea.authorName}
                 </div>
 
-                {/* Action buttons row */}
-                <div className="flex items-center gap-2 pt-2 border-t border-border">
-                  {/* Vote button — always visible for all profiles */}
-                  {voted ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5 flex-1 border-primary/40 text-primary"
-                      onClick={(e) => handleRemoveVote(idea.id, e)}
-                      disabled={votingInProgress === idea.id || isOwnIdea}
-                      title={isOwnIdea ? "Não pode votar na própria ideia" : "Remover voto"}
-                    >
-                      {votingInProgress === idea.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ThumbsUp className="h-3.5 w-3.5 fill-primary" />
-                      )}
-                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5 flex-1"
-                      onClick={(e) => handleVote(idea.id, e)}
-                      disabled={votingInProgress === idea.id || isOwnIdea || totalUserVotes >= MAX_VOTES_PER_USER || !config?.voting_open}
-                      title={
-                        isOwnIdea
-                          ? "Não pode votar na própria ideia"
-                          : !config?.voting_open
-                          ? "Votação fechada"
-                          : totalUserVotes >= MAX_VOTES_PER_USER
-                          ? "Todos os votos usados"
-                          : "Votar nesta ideia"
-                      }
-                    >
-                      {votingInProgress === idea.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ThumbsUp className="h-3.5 w-3.5" />
-                      )}
-                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
-                    </Button>
-                  )}
+                {/* Star rating + average */}
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className="p-0.5 disabled:cursor-not-allowed"
+                        disabled={votingInProgress === idea.id || isOwnIdea || !config?.voting_open}
+                        title={
+                          isOwnIdea
+                            ? "Não pode avaliar a própria ideia"
+                            : !config?.voting_open
+                            ? "Votação fechada"
+                            : `Avaliar com ${star} estrela${star > 1 ? "s" : ""}`
+                        }
+                        onClick={(e) => handleStarRate(idea.id, star, e)}
+                      >
+                        <Star
+                          className={`h-5 w-5 transition-colors ${
+                            star <= userRating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-muted-foreground/40 hover:text-yellow-400/60"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {votingInProgress === idea.id && (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {idea.avgRating > 0
+                      ? `${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})`
+                      : "Sem avaliações"}
+                  </span>
+                </div>
 
-                  {/* Join group button — always visible when group exists */}
-                  {idea.groupId && (
-                    <Button
-                      variant={profile?.group_id === idea.groupId ? "secondary" : "default"}
-                      size="sm"
-                      className="h-8 text-xs gap-1.5"
-                      onClick={(e) => handleJoinGroup(idea, e)}
-                      disabled={
-                        !canJoin ||
-                        !!profile?.group_id ||
-                        (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
-                        joiningGroup === idea.groupId
-                      }
-                      title={
-                        profile?.group_id === idea.groupId
-                          ? "Você já está neste grupo"
-                          : profile?.group_id
-                          ? "Você já pertence a outro grupo"
-                          : !canJoin
-                          ? "Entrada em grupos fechada"
-                          : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
-                          ? "Grupo cheio"
-                          : "Entrar neste grupo"
-                      }
-                    >
-                      {joiningGroup === idea.groupId ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : profile?.group_id === idea.groupId ? (
-                        <Users className="h-3.5 w-3.5" />
-                      ) : (
-                        <UserPlus className="h-3.5 w-3.5" />
-                      )}
-                      {profile?.group_id === idea.groupId
-                        ? "Meu grupo"
-                        : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
-                    </Button>
-                  )}
+                {/* Join group + Admin actions */}
+                <div className="flex items-center gap-2">
+                  {/* Join group button — always visible */}
+                  <Button
+                    variant={profile?.group_id === idea.groupId && idea.groupId ? "secondary" : "default"}
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={(e) => handleJoinGroup(idea, e)}
+                    disabled={
+                      !idea.groupId ||
+                      !canJoin ||
+                      !!profile?.group_id ||
+                      (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
+                      joiningGroup === idea.groupId
+                    }
+                    title={
+                      !idea.groupId
+                        ? "Grupo ainda não formado"
+                        : profile?.group_id === idea.groupId
+                        ? "Você já está neste grupo"
+                        : profile?.group_id
+                        ? "Você já pertence a outro grupo"
+                        : !canJoin
+                        ? "Entrada em grupos fechada"
+                        : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
+                        ? "Grupo cheio"
+                        : "Entrar neste grupo"
+                    }
+                  >
+                    {joiningGroup === idea.groupId ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : profile?.group_id === idea.groupId && idea.groupId ? (
+                      <Users className="h-3.5 w-3.5" />
+                    ) : (
+                      <UserPlus className="h-3.5 w-3.5" />
+                    )}
+                    {!idea.groupId
+                      ? "Sem grupo"
+                      : profile?.group_id === idea.groupId
+                      ? "Meu grupo"
+                      : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
+                  </Button>
 
                   {/* Admin actions */}
                   {isAdmin && (
                     <>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openEditDialog(idea, e)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button
@@ -638,7 +638,10 @@ export default function IdeasPage() {
                       : "—"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <ThumbsUp className="h-3.5 w-3.5" /> {detailIdea.voteCount} votos
+                    <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                    {detailIdea.avgRating > 0
+                      ? `${detailIdea.avgRating.toFixed(1)} (${detailIdea.voteCount} avaliações)`
+                      : "Sem avaliações"}
                   </span>
                 </div>
 
