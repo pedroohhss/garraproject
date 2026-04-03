@@ -20,11 +20,13 @@ export default function Register() {
 
   useEffect(() => {
     const fetchCount = async () => {
-      const { count } = await supabase
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .neq("role", "admin");
-      setCount(count ?? 0);
+      const { data, error } = await supabase.rpc("get_participant_count");
+      if (error) {
+        console.error("[Register] Error fetching count:", error.message);
+        setCount(0);
+      } else {
+        setCount(data ?? 0);
+      }
     };
     fetchCount();
   }, []);
