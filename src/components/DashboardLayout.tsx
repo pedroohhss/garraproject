@@ -35,13 +35,17 @@ const navByRole: Record<string, NavItem[]> = {
   ],
   participante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
-    { label: "Atividades", icon: FileText, path: "/participante/atividades" },
+    { label: "Meu Grupo", icon: Users, path: "/participante/grupo" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
+    { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },
+    { label: "Materiais", icon: BookOpen, path: "/participante/materiais" },
   ],
   representante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
-    { label: "Atividades", icon: FileText, path: "/participante/atividades" },
+    { label: "Meu Grupo", icon: Users, path: "/participante/grupo" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
+    { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },
+    { label: "Materiais", icon: BookOpen, path: "/participante/materiais" },
   ],
 };
 
