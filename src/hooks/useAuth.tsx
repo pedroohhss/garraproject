@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       return data;
     } catch (err: any) {
-      if (err?.name === "AbortError") {
+      if (err?.message === "TIMEOUT") {
         console.error("[Auth] Profile fetch timed out after", AUTH_TIMEOUT_MS, "ms");
         setError("Tempo esgotado ao carregar perfil. Verifique sua conexão.");
       } else {
