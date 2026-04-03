@@ -9,6 +9,8 @@ import {
   Calendar,
   Lightbulb,
   BookOpen,
+  Layers,
+  ClipboardList,
   LogOut,
   ChevronLeft,
   ChevronRight,
