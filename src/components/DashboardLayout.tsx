@@ -8,6 +8,7 @@ import {
   FileText,
   Calendar,
   Lightbulb,
+  BookOpen,
   LogOut,
   ChevronLeft,
   ChevronRight,
