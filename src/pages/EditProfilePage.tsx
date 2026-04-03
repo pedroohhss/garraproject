@@ -298,9 +298,38 @@ export default function EditProfilePage() {
               <Label className="text-xs">LinkedIn</Label>
               <Input value={form.linkedin_url} onChange={(e) => set("linkedin_url", e.target.value)} maxLength={200} placeholder="URL do perfil LinkedIn" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">URL do avatar</Label>
-              <Input value={form.avatar_url} onChange={(e) => set("avatar_url", e.target.value)} maxLength={500} placeholder="URL de imagem" />
+            <div className="space-y-2">
+              <Label className="text-xs">Foto de perfil</Label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : form.avatar_url ? (
+                    <img src={form.avatar_url} alt="Avatar atual" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    onChange={handleAvatarSelect}
+                  />
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {form.avatar_url || avatarPreview ? "Trocar foto" : "Enviar foto"}
+                  </Button>
+                  {avatarPreview && (
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={removeAvatarPreview}>
+                      <X className="h-3 w-3" /> Remover
+                    </Button>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">JPG ou PNG, máx. 2MB</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
