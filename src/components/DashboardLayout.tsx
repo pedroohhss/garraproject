@@ -76,7 +76,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     );
   }
 
-  if (error) {
+  if (error && !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass-card p-8 max-w-md text-center space-y-4">

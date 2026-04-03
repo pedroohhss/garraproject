@@ -89,17 +89,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Skip INITIAL_SESSION — getSession handles initialization
         if (event === "INITIAL_SESSION") return;
 
-        // For subsequent events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.)
+        // For TOKEN_REFRESHED, just update session/user without re-fetching profile
+        if (event === "TOKEN_REFRESHED") {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          return;
+        }
+
+        // For SIGNED_OUT
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setError(null);
+          setLoading(false);
+          return;
+        }
+
+        // For SIGNED_IN and other events
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
           const profileData = await fetchProfile(newSession.user.id);
-          setProfile(profileData);
-          if (!profileData) {
-            setError("Erro ao carregar perfil do usuário.");
-          } else {
+          if (profileData) {
+            setProfile(profileData);
             setError(null);
+          }
+          // Only set error if we don't already have a profile loaded
+          // (avoids overwriting good state from getSession)
+          if (!profileData && !profile) {
+            setError("Erro ao carregar perfil do usuário.");
           }
         } else {
           setProfile(null);
