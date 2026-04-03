@@ -430,7 +430,16 @@ export default function IdeasPage() {
                   <p className="text-sm text-muted-foreground line-clamp-3">{idea.description}</p>
                 )}
 
-                <div className="text-xs text-muted-foreground pt-1">por {idea.authorName}</div>
+                <div className="text-xs text-muted-foreground pt-1">
+                  por{" "}
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={(e) => { e.stopPropagation(); if (idea.created_by) navigate(`/perfil/${idea.created_by}`); }}
+                  >
+                    {idea.authorName}
+                  </button>
+                </div>
 
                 {/* Cargo slots */}
                 {idea.groupId && (
