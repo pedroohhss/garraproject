@@ -42,17 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     console.log("[Auth] Fetching profile for user:", userId);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
-
-      const { data, error: queryError } = await supabase
+      const queryPromise = supabase
         .from("users")
         .select("*")
         .eq("id", userId)
-        .single()
-        .abortSignal(controller.signal);
+        .single();
 
-      clearTimeout(timeout);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("TIMEOUT")), AUTH_TIMEOUT_MS)
+      );
+
+      const { data, error: queryError } = await Promise.race([queryPromise, timeoutPromise]);
 
       if (queryError) {
         console.error("[Auth] Error fetching profile:", queryError.message);
