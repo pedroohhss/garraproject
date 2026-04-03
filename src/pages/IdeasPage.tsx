@@ -554,7 +554,6 @@ export default function IdeasPage() {
                     </>
                   )}
                 </div>
-                </div>
               </div>
             );
           })}
