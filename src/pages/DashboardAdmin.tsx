@@ -25,14 +25,23 @@ const toggles: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] = [
 export default function DashboardAdmin() {
   const [config, setConfig] = useState<ChallengeConfig | null>(null);
   const [stats, setStats] = useState({ participants: 0, groups: 0, activeWeek: "—", deliveries: 0 });
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchConfig();
-    fetchStats();
+    const timeout = setTimeout(() => {
+      setLoadError(prev => prev ?? "Tempo esgotado ao carregar dados.");
+    }, 8000);
+
+    Promise.all([fetchConfig(), fetchStats()])
+      .catch(() => setLoadError("Erro ao carregar dados do painel."))
+      .finally(() => clearTimeout(timeout));
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const fetchConfig = async () => {
-    const { data } = await supabase.from("challenge_config").select("*").limit(1).single();
+    const { data, error } = await supabase.from("challenge_config").select("*").limit(1).single();
+    if (error) { console.error("[Admin] config error:", error.message); return; }
     if (data) setConfig(data as ChallengeConfig);
   };
 
@@ -67,6 +76,19 @@ export default function DashboardAdmin() {
     setConfig({ ...config, [key]: value });
     toast.success("Configuração atualizada");
   };
+
+  if (loadError) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <GlassCard className="text-center p-8">
+            <p className="text-destructive mb-4">{loadError}</p>
+            <button onClick={() => window.location.reload()} className="text-primary hover:underline text-sm">Recarregar</button>
+          </GlassCard>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

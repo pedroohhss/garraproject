@@ -11,13 +11,24 @@ import DashboardParticipant from "./pages/DashboardParticipant";
 import DashboardLeader from "./pages/DashboardLeader";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import NotFound from "./pages/NotFound";
+import AuthErrorBanner from "./components/AuthErrorBanner";
 
 const queryClient = new QueryClient();
 
-function RoleRedirect() {
-  const { profile, loading } = useAuth();
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="skeleton-loading h-8 w-32" />
+    </div>
+  );
+}
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
+function RoleRedirect() {
+  const { profile, loading, error } = useAuth();
+
+  console.log("[RoleRedirect] state:", { loading, hasProfile: !!profile, role: profile?.role, error });
+
+  if (loading) return <LoadingScreen />;
   if (!profile) return <Navigate to="/login" replace />;
 
   switch (profile.role) {
@@ -33,7 +44,7 @@ function RoleRedirect() {
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && profile && !allowedRoles.includes(profile.role ?? "")) {
     return <Navigate to="/" replace />;
@@ -43,7 +54,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
+  if (loading) return <LoadingScreen />;
   if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -55,6 +66,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <AuthErrorBanner />
           <Routes>
             <Route path="/" element={<RoleRedirect />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
