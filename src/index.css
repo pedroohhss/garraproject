@@ -78,21 +78,21 @@
   }
 
   .section-label {
-    font-size: 13px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: hsl(var(--muted-foreground));
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .value-highlight {
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 22px;
+    font-weight: 500;
     color: hsl(var(--foreground));
   }
 
   .label-sm {
-    font-size: 12px;
+    font-size: 11px;
     color: hsl(var(--muted-foreground));
   }
 
