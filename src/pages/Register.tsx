@@ -43,7 +43,7 @@ export default function Register() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -53,12 +53,25 @@ export default function Register() {
     });
 
     if (error) {
-      toast.error(error.message);
+      if (error.status === 429) {
+        toast.error("Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente.");
+      } else if (error.message.includes("invalid")) {
+        toast.error("Endereço de email inválido.");
+      } else {
+        toast.error(error.message);
+      }
       setLoading(false);
       return;
     }
 
-    toast.success("Conta criada! Verifique seu email para confirmar.");
+    // Check for fake signup (user already exists — Supabase returns 200 with fake user)
+    if (data?.user?.identities?.length === 0) {
+      toast.error("Este email já está cadastrado. Faça login.");
+      setLoading(false);
+      return;
+    }
+
+    toast.success("Conta criada com sucesso!");
     navigate("/login");
     setLoading(false);
   };
