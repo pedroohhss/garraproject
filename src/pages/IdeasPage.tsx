@@ -638,7 +638,10 @@ export default function IdeasPage() {
                       : "—"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <ThumbsUp className="h-3.5 w-3.5" /> {detailIdea.voteCount} votos
+                    <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                    {detailIdea.avgRating > 0
+                      ? `${detailIdea.avgRating.toFixed(1)} (${detailIdea.voteCount} avaliações)`
+                      : "Sem avaliações"}
                   </span>
                 </div>
 
