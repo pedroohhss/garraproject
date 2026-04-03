@@ -278,42 +278,35 @@ export default function IdeasPage() {
     }
   };
 
-  // Voting
-  const handleVote = async (ideaId: string, e: React.MouseEvent) => {
+  // Star rating
+  const handleStarRate = async (ideaId: string, rating: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || votingInProgress) return;
-    if (totalUserVotes >= MAX_VOTES_PER_USER) {
-      toast({ title: "Você já usou todos os 5 votos", variant: "destructive" });
+    if (!config?.voting_open) {
+      toast({ title: "Votação fechada", variant: "destructive" });
+      return;
+    }
+    const isOwnIdea = ideas.find((i) => i.id === ideaId)?.created_by === user.id;
+    if (isOwnIdea) {
+      toast({ title: "Não pode avaliar a própria ideia", variant: "destructive" });
       return;
     }
     setVotingInProgress(ideaId);
     try {
+      // Delete existing vote for this idea, then insert new one
+      const existingVote = userVotes.find((v) => v.idea_id === ideaId);
+      if (existingVote) {
+        await supabase.from("votes").delete().eq("id", existingVote.id);
+      }
       const { error } = await supabase.from("votes").insert({
         idea_id: ideaId,
         user_id: user.id,
-        quantity: 1,
+        quantity: rating,
       });
       if (error) throw error;
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao votar", description: err.message, variant: "destructive" });
-    } finally {
-      setVotingInProgress(null);
-    }
-  };
-
-  const handleRemoveVote = async (ideaId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user || votingInProgress) return;
-    const vote = userVotes.find((v) => v.idea_id === ideaId);
-    if (!vote) return;
-    setVotingInProgress(ideaId);
-    try {
-      const { error } = await supabase.from("votes").delete().eq("id", vote.id);
-      if (error) throw error;
-      await fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro ao remover voto", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao avaliar", description: err.message, variant: "destructive" });
     } finally {
       setVotingInProgress(null);
     }
