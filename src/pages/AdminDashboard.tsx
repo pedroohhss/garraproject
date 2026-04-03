@@ -103,7 +103,7 @@ export default function AdminDashboard() {
           ].filter(Boolean) as string[];
           const uniqueIds = [...new Set(userIds)];
           const { data: usersData } = uniqueIds.length > 0
-            ? await supabase.from("users").select("id, full_name").in("id", uniqueIds)
+            ? await supabase.from("users_public" as any).select("id, full_name").in("id", uniqueIds) as { data: { id: string; full_name: string }[] | null }
             : { data: [] as { id: string; full_name: string }[] };
           const nameMap = new Map((usersData ?? []).map((u) => [u.id, u.full_name]));
 
