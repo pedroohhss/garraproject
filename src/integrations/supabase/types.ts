@@ -426,38 +426,71 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cargos_aptos: string[] | null
+          cidade: string | null
           created_at: string | null
           email: string
+          estado: string | null
+          estado_civil: string | null
           full_name: string
           group_id: string | null
+          habilidades: string | null
           id: string
+          idade: number | null
+          instagram_url: string | null
           is_active: boolean | null
           linkedin_url: string | null
+          objetivos_curto_prazo: string | null
+          objetivos_longo_prazo: string | null
           role: string | null
+          sexo: string | null
+          trabalho_estudo: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cargos_aptos?: string[] | null
+          cidade?: string | null
           created_at?: string | null
           email: string
+          estado?: string | null
+          estado_civil?: string | null
           full_name: string
           group_id?: string | null
+          habilidades?: string | null
           id: string
+          idade?: number | null
+          instagram_url?: string | null
           is_active?: boolean | null
           linkedin_url?: string | null
+          objetivos_curto_prazo?: string | null
+          objetivos_longo_prazo?: string | null
           role?: string | null
+          sexo?: string | null
+          trabalho_estudo?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cargos_aptos?: string[] | null
+          cidade?: string | null
           created_at?: string | null
           email?: string
+          estado?: string | null
+          estado_civil?: string | null
           full_name?: string
           group_id?: string | null
+          habilidades?: string | null
           id?: string
+          idade?: number | null
+          instagram_url?: string | null
           is_active?: boolean | null
           linkedin_url?: string | null
+          objetivos_curto_prazo?: string | null
+          objetivos_longo_prazo?: string | null
           role?: string | null
+          sexo?: string | null
+          trabalho_estudo?: string | null
         }
         Relationships: [
           {
@@ -549,16 +582,61 @@ export type Database = {
     Views: {
       users_public: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
+          cargos_aptos: string[] | null
+          cidade: string | null
+          created_at: string | null
+          estado: string | null
+          estado_civil: string | null
           full_name: string | null
+          habilidades: string | null
           id: string | null
+          idade: number | null
+          instagram_url: string | null
+          linkedin_url: string | null
+          objetivos_curto_prazo: string | null
+          objetivos_longo_prazo: string | null
+          sexo: string | null
+          trabalho_estudo: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          cargos_aptos?: string[] | null
+          cidade?: string | null
+          created_at?: string | null
+          estado?: string | null
+          estado_civil?: string | null
           full_name?: string | null
+          habilidades?: string | null
           id?: string | null
+          idade?: number | null
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          objetivos_curto_prazo?: string | null
+          objetivos_longo_prazo?: string | null
+          sexo?: string | null
+          trabalho_estudo?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          cargos_aptos?: string[] | null
+          cidade?: string | null
+          created_at?: string | null
+          estado?: string | null
+          estado_civil?: string | null
           full_name?: string | null
+          habilidades?: string | null
           id?: string | null
+          idade?: number | null
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          objetivos_curto_prazo?: string | null
+          objetivos_longo_prazo?: string | null
+          sexo?: string | null
+          trabalho_estudo?: string | null
         }
         Relationships: []
       }
