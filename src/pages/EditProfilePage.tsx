@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Upload, User, X } from "lucide-react";
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
@@ -54,6 +54,10 @@ export default function EditProfilePage() {
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -104,6 +108,27 @@ export default function EditProfilePage() {
     });
   };
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      toast({ title: "Apenas JPG e PNG são aceitos", variant: "destructive" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Imagem deve ter no máximo 2MB", variant: "destructive" });
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const removeAvatarPreview = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) {
@@ -112,12 +137,28 @@ export default function EditProfilePage() {
     }
     setSaving(true);
     try {
+      let avatarUrl = form.avatar_url.trim() || null;
+
+      // Upload avatar if new file selected
+      if (avatarFile) {
+        setUploadingAvatar(true);
+        const ext = avatarFile.name.split(".").pop() ?? "jpg";
+        const filePath = `${user.id}/avatar.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+        avatarUrl = urlData.publicUrl;
+        setUploadingAvatar(false);
+      }
+
       const { error } = await supabase
         .from("users")
         .update({
           full_name: form.full_name.trim(),
           bio: form.bio.trim() || null,
-          avatar_url: form.avatar_url.trim() || null,
+          avatar_url: avatarUrl,
           linkedin_url: form.linkedin_url.trim() || null,
           sexo: form.sexo || null,
           idade: form.idade ? parseInt(form.idade) : null,
@@ -257,9 +298,38 @@ export default function EditProfilePage() {
               <Label className="text-xs">LinkedIn</Label>
               <Input value={form.linkedin_url} onChange={(e) => set("linkedin_url", e.target.value)} maxLength={200} placeholder="URL do perfil LinkedIn" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">URL do avatar</Label>
-              <Input value={form.avatar_url} onChange={(e) => set("avatar_url", e.target.value)} maxLength={500} placeholder="URL de imagem" />
+            <div className="space-y-2">
+              <Label className="text-xs">Foto de perfil</Label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : form.avatar_url ? (
+                    <img src={form.avatar_url} alt="Avatar atual" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    onChange={handleAvatarSelect}
+                  />
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {form.avatar_url || avatarPreview ? "Trocar foto" : "Enviar foto"}
+                  </Button>
+                  {avatarPreview && (
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={removeAvatarPreview}>
+                      <X className="h-3 w-3" /> Remover
+                    </Button>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">JPG ou PNG, máx. 2MB</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
