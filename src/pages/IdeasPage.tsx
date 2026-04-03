@@ -450,84 +450,107 @@ export default function IdeasPage() {
                   <p className="text-sm text-muted-foreground line-clamp-3">{idea.description}</p>
                 )}
 
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs text-muted-foreground">por {idea.authorName}</span>
+                <div className="text-xs text-muted-foreground pt-1">
+                  por {idea.authorName}
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Vote count always visible */}
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <ThumbsUp className="h-3 w-3" /> {idea.voteCount}
-                    </span>
+                {/* Action buttons row */}
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  {/* Vote button — always visible for all profiles */}
+                  {voted ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 flex-1 border-primary/40 text-primary"
+                      onClick={(e) => handleRemoveVote(idea.id, e)}
+                      disabled={votingInProgress === idea.id || isOwnIdea}
+                      title={isOwnIdea ? "Não pode votar na própria ideia" : "Remover voto"}
+                    >
+                      {votingInProgress === idea.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ThumbsUp className="h-3.5 w-3.5 fill-primary" />
+                      )}
+                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5 flex-1"
+                      onClick={(e) => handleVote(idea.id, e)}
+                      disabled={votingInProgress === idea.id || isOwnIdea || totalUserVotes >= MAX_VOTES_PER_USER || !config?.voting_open}
+                      title={
+                        isOwnIdea
+                          ? "Não pode votar na própria ideia"
+                          : !config?.voting_open
+                          ? "Votação fechada"
+                          : totalUserVotes >= MAX_VOTES_PER_USER
+                          ? "Todos os votos usados"
+                          : "Votar nesta ideia"
+                      }
+                    >
+                      {votingInProgress === idea.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                      )}
+                      {idea.voteCount} {idea.voteCount === 1 ? "voto" : "votos"}
+                    </Button>
+                  )}
 
-                    {/* Voting buttons */}
-                    {config?.voting_open && !isOwnIdea && (
-                      <>
-                        {voted ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={(e) => handleRemoveVote(idea.id, e)}
-                            disabled={votingInProgress === idea.id}
-                            title="Remover voto"
-                          >
-                            {votingInProgress === idea.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <ThumbsDown className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-primary hover:text-primary"
-                            onClick={(e) => handleVote(idea.id, e)}
-                            disabled={votingInProgress === idea.id || totalUserVotes >= MAX_VOTES_PER_USER}
-                            title="Votar"
-                          >
-                            {votingInProgress === idea.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <ThumbsUp className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                        )}
-                      </>
-                    )}
+                  {/* Join group button — always visible when group exists */}
+                  {idea.groupId && (
+                    <Button
+                      variant={profile?.group_id === idea.groupId ? "secondary" : "default"}
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={(e) => handleJoinGroup(idea, e)}
+                      disabled={
+                        !canJoin ||
+                        !!profile?.group_id ||
+                        (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP ||
+                        joiningGroup === idea.groupId
+                      }
+                      title={
+                        profile?.group_id === idea.groupId
+                          ? "Você já está neste grupo"
+                          : profile?.group_id
+                          ? "Você já pertence a outro grupo"
+                          : !canJoin
+                          ? "Entrada em grupos fechada"
+                          : (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP
+                          ? "Grupo cheio"
+                          : "Entrar neste grupo"
+                      }
+                    >
+                      {joiningGroup === idea.groupId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : profile?.group_id === idea.groupId ? (
+                        <Users className="h-3.5 w-3.5" />
+                      ) : (
+                        <UserPlus className="h-3.5 w-3.5" />
+                      )}
+                      {profile?.group_id === idea.groupId
+                        ? "Meu grupo"
+                        : `Entrar (${idea.groupMemberCount}/${MAX_PER_GROUP})`}
+                    </Button>
+                  )}
 
-                    {/* Join group button */}
-                    {canJoin && idea.groupId && !isAdmin && !profile?.group_id && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={(e) => handleJoinGroup(idea, e)}
-                        disabled={joiningGroup === idea.groupId || (idea.groupMemberCount ?? 0) >= MAX_PER_GROUP}
-                      >
-                        {joiningGroup === idea.groupId ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <UserPlus className="h-3 w-3" />
-                        )}
-                        Entrar
+                  {/* Admin actions */}
+                  {isAdmin && (
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openEditDialog(idea, e)}>
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-
-                    {/* Admin actions */}
-                    {isAdmin && (
-                      <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openEditDialog(idea, e)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={(e) => handleDelete(idea.id, e)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={(e) => handleDelete(idea.id, e)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                       </>
                     )}
                   </div>
