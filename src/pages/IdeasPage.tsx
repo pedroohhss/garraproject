@@ -156,10 +156,13 @@ export default function IdeasPage() {
 
       const enriched: Idea[] = rawIdeas.map((i) => {
         const group = groupByIdea.get(i.id);
+        const count = voteCountMap.get(i.id) ?? 0;
+        const sum = voteSumMap.get(i.id) ?? 0;
         return {
           ...i,
           authorName: i.created_by ? nameMap.get(i.created_by) ?? "Desconhecido" : "Desconhecido",
-          voteCount: voteCountMap.get(i.id) ?? 0,
+          voteCount: count,
+          avgRating: count > 0 ? sum / count : 0,
           groupId: group?.id ?? null,
           groupName: group?.name ?? null,
           groupMemberCount: group ? (memberCountMap.get(group.id) ?? 0) : 0,
