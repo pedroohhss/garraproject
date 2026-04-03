@@ -148,8 +148,8 @@ export default function IdeasPage() {
       const allUserIds = [...new Set([...authorIds, ...memberUserIds])];
       let nameMap = new Map<string, string>();
       if (allUserIds.length > 0) {
-        const { data: usersData } = await supabase.from("users_public" as any).select("id, full_name").in("id", allUserIds);
-        nameMap = new Map(((usersData ?? []) as { id: string; full_name: string }[]).map((u) => [u.id, u.full_name]));
+        const { data: usersData } = await supabase.from("users_public" as any).select("id, full_name").in("id", allUserIds) as { data: { id: string; full_name: string }[] | null };
+        nameMap = new Map((usersData ?? []).map((u) => [u.id, u.full_name]));
       }
 
       // Groups linked to ideas

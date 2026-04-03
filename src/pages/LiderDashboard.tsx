@@ -54,14 +54,14 @@ export default function LiderDashboard() {
               .select("id, full_name, group_id")
               .in("group_id", groupIds),
             repIds.length > 0
-              ? supabase.from("users_public" as any).select("id, full_name").in("id", repIds)
+              ? supabase.from("users_public" as any).select("id, full_name").in("id", repIds) as Promise<{ data: { id: string; full_name: string }[] | null }>
               : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
           ]);
 
           const membersData = membersRes.data ?? [];
           const repsData = repsRes.data ?? [];
 
-          const repMap = new Map(repsData.map((r) => [r.id, r.full_name]));
+          const repMap = new Map((repsData as { id: string; full_name: string }[]).map((r) => [r.id, r.full_name]));
 
           const enriched: GroupRow[] = rawGroups.map((g) => ({
             ...g,
