@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Lightbulb, Plus, Pencil, Trash2, Loader2, Lock,
-  ThumbsUp, ThumbsDown, Search, Users, Calendar as CalendarIcon, UserPlus,
+  Star, Search, Users, Calendar as CalendarIcon, UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
