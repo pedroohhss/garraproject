@@ -54,7 +54,7 @@ export default function LiderDashboard() {
               .select("id, full_name, group_id")
               .in("group_id", groupIds),
             repIds.length > 0
-              ? supabase.from("users_public" as any).select("id, full_name").in("id", repIds) as Promise<{ data: { id: string; full_name: string }[] | null }>
+              ? (supabase.from("users_public" as any).select("id, full_name").in("id", repIds) as unknown as Promise<{ data: { id: string; full_name: string }[] | null }>)
               : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
           ]);
 
