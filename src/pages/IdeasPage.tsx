@@ -197,11 +197,14 @@ export default function IdeasPage() {
 
   // Vote helpers
   const totalUserVotes = useMemo(
-    () => userVotes.reduce((sum, v) => sum + (v.quantity ?? 1), 0),
+    () => userVotes.length,
     [userVotes]
   );
-  const hasVotedFor = useCallback(
-    (ideaId: string) => userVotes.some((v) => v.idea_id === ideaId),
+  const getUserRating = useCallback(
+    (ideaId: string) => {
+      const vote = userVotes.find((v) => v.idea_id === ideaId);
+      return vote?.quantity ?? 0;
+    },
     [userVotes]
   );
 
