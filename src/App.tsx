@@ -11,13 +11,18 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function RoleRedirect() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="skeleton-loading h-8 w-32" /></div>;
   if (!user) return <Navigate to="/login" replace />;
 
   // TODO: add dashboard routes per role
-  return <div className="min-h-screen flex items-center justify-center text-foreground">Dashboard em construção</div>;
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-foreground gap-4">
+      <p>Olá, {profile?.full_name ?? "..."}! Dashboard em construção.</p>
+      <button onClick={() => signOut()} className="text-sm text-primary hover:underline">Sair</button>
+    </div>
+  );
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
