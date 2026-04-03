@@ -30,8 +30,9 @@ const navByRole: Record<string, NavItem[]> = {
   ],
   lider: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/lider" },
-    { label: "Entregas", icon: FileText, path: "/lider/entregas" },
-    { label: "Equipe", icon: Users, path: "/lider/equipe" },
+    { label: "Meus Grupos", icon: Users, path: "/lider/grupos" },
+    { label: "Semana Atual", icon: Calendar, path: "/lider/semana" },
+    { label: "Materiais", icon: BookOpen, path: "/lider/materiais" },
   ],
   participante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
