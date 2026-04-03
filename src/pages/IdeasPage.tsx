@@ -29,6 +29,7 @@ interface Idea {
   created_at: string | null;
   authorName?: string;
   voteCount: number;
+  avgRating: number;
   groupId?: string | null;
   groupName?: string | null;
   groupMemberCount?: number;
