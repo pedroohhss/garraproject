@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +64,7 @@ const MAX_PER_GROUP = 5;
 
 export default function IdeasPage() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [config, setConfig] = useState<{
     ideas_open: boolean;
@@ -428,7 +430,16 @@ export default function IdeasPage() {
                   <p className="text-sm text-muted-foreground line-clamp-3">{idea.description}</p>
                 )}
 
-                <div className="text-xs text-muted-foreground pt-1">por {idea.authorName}</div>
+                <div className="text-xs text-muted-foreground pt-1">
+                  por{" "}
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={(e) => { e.stopPropagation(); if (idea.created_by) navigate(`/perfil/${idea.created_by}`); }}
+                  >
+                    {idea.authorName}
+                  </button>
+                </div>
 
                 {/* Cargo slots */}
                 {idea.groupId && (

@@ -12,6 +12,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
 import IdeasPage from "./pages/IdeasPage";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -36,14 +38,16 @@ function RoleRedirect() {
   return <Navigate to="/participante" replace />;
 }
 
-function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
 
-  const role = profile?.role ?? "participante";
-  if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  if (allowedRoles) {
+    const role = profile?.role ?? "participante";
+    if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  }
 
   return <>{children}</>;
 }
@@ -82,6 +86,10 @@ const App = () => (
             {/* Participante / Representante routes */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
             <Route path="/participante/ideias" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><IdeasPage /></ProtectedRoute>} />
+
+            {/* Profile routes */}
+            <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+            <Route path="/perfil/:userId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

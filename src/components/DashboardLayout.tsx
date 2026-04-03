@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { User } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -158,14 +159,18 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
         {/* User footer */}
         <div className="border-t border-border px-3 py-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold shrink-0">
+          <Link
+            to={profile?.id ? `/perfil/${profile.id}` : "#"}
+            className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold shrink-0 hover:ring-1 hover:ring-primary/40 transition-all"
+            title="Ver perfil"
+          >
             {initials}
-          </div>
+          </Link>
           {!collapsed && (
-            <div className="flex-1 min-w-0">
+            <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
               <p className="text-sm text-foreground truncate">{profile?.full_name ?? "..."}</p>
               <p className="text-xs text-muted-foreground truncate capitalize">{role}</p>
-            </div>
+            </Link>
           )}
           <button
             onClick={handleSignOut}
