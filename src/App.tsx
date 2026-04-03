@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
+import IdeasPage from "./pages/IdeasPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
