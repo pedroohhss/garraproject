@@ -199,12 +199,6 @@ export default function AdminDashboard() {
         }
       }
 
-      // Set groups_confirmed = true
-      if (config) {
-        await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", config.id);
-        setConfig((prev) => prev ? { ...prev, groups_confirmed: true } : prev);
-      }
-
       toast({ title: `${selected.length} grupos criados com sucesso!` });
     } catch (err: any) {
       toast({ title: "Erro ao criar grupos", description: err.message, variant: "destructive" });
