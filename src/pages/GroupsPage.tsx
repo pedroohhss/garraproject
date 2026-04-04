@@ -289,7 +289,7 @@ export default function GroupsPage() {
             <p className="text-sm font-medium text-foreground">Revise os grupos antes de confirmar</p>
             <p className="text-xs text-muted-foreground mt-1">
               Você pode remover grupos indesejados e adicionar outros a partir de ideias não selecionadas.
-              Após confirmar, os participantes poderão entrar nos grupos.
+              Após confirmar, use o toggle "Entrada nos grupos" no painel admin para liberar a entrada dos participantes.
             </p>
           </div>
         </div>
