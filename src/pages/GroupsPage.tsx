@@ -262,21 +262,22 @@ export default function GroupsPage() {
         </p>
 
         {/* Admin actions */}
-        {isAdmin && groups.length > 0 && !config?.groups_confirmed && (
+        {isAdmin && groups.length > 0 && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddDialogOpen(true)} disabled={groups.length >= MAX_GROUPS}>
               <Plus className="h-3.5 w-3.5" /> Adicionar grupo
             </Button>
-            <Button size="sm" className="gap-1.5" onClick={() => setConfirmDialogOpen(true)}>
-              <CheckCircle2 className="h-3.5 w-3.5" /> Confirmar grupos
-            </Button>
+            {!config?.groups_confirmed && (
+              <Button size="sm" className="gap-1.5" onClick={() => setConfirmDialogOpen(true)}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> Confirmar grupos
+              </Button>
+            )}
+            {config?.groups_confirmed && (
+              <Badge variant="default" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Confirmados
+              </Badge>
+            )}
           </div>
-        )}
-
-        {config?.groups_confirmed && (
-          <Badge variant="default" className="gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Grupos confirmados
-          </Badge>
         )}
       </div>
 
