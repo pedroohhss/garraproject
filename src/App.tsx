@@ -12,13 +12,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
-import AdminWeeksPage from "./pages/AdminWeeksPage";
-import AdminActivitiesPage from "./pages/AdminActivitiesPage";
-import ActivitiesPage from "./pages/ActivitiesPage";
-import DeliveryTrackingPage from "./pages/DeliveryTrackingPage";
+import WeeksListPage from "./pages/WeeksListPage";
+import WeekDetailPage from "./pages/WeekDetailPage";
 import ChecklistPage from "./pages/ChecklistPage";
 import ChecklistTrackingPage from "./pages/ChecklistTrackingPage";
-import AdminChecklistPage from "./pages/AdminChecklistPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
@@ -54,9 +51,11 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles) {
-    const role = profile?.role ?? "participante";
-    if (!allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  if (allowedRoles && profile) {
+    const role = profile.role ?? "participante";
+    if (!allowedRoles.includes(role)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -77,44 +76,42 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Role-based redirect */}
             <Route path="/" element={<RoleRedirect />} />
 
-            {/* Public routes */}
+            {/* Public */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/cadastro" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Admin routes */}
+            {/* Admin */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsersPage /></ProtectedRoute>} />
             <Route path="/admin/ideias" element={<ProtectedRoute allowedRoles={["admin"]}><IdeasPage /></ProtectedRoute>} />
             <Route path="/admin/ranking" element={<ProtectedRoute allowedRoles={["admin"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/admin/grupos" element={<ProtectedRoute allowedRoles={["admin"]}><GroupsPage /></ProtectedRoute>} />
-            <Route path="/admin/semanas" element={<ProtectedRoute allowedRoles={["admin"]}><AdminWeeksPage /></ProtectedRoute>} />
-            <Route path="/admin/atividades" element={<ProtectedRoute allowedRoles={["admin"]}><AdminActivitiesPage /></ProtectedRoute>} />
-            <Route path="/admin/entregas" element={<ProtectedRoute allowedRoles={["admin"]}><DeliveryTrackingPage /></ProtectedRoute>} />
-            <Route path="/admin/checklist" element={<ProtectedRoute allowedRoles={["admin"]}><AdminChecklistPage /></ProtectedRoute>} />
+            <Route path="/admin/semanas" element={<ProtectedRoute allowedRoles={["admin"]}><WeeksListPage /></ProtectedRoute>} />
+            <Route path="/admin/semanas/:weekId" element={<ProtectedRoute allowedRoles={["admin"]}><WeekDetailPage /></ProtectedRoute>} />
             <Route path="/admin/checklist/acompanhamento" element={<ProtectedRoute allowedRoles={["admin"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
-            {/* Lider routes */}
+            {/* Lider */}
             <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
             <Route path="/lider/ideias" element={<ProtectedRoute allowedRoles={["lider"]}><IdeasPage /></ProtectedRoute>} />
             <Route path="/lider/ranking" element={<ProtectedRoute allowedRoles={["lider"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/lider/grupos" element={<ProtectedRoute allowedRoles={["lider"]}><GroupsPage /></ProtectedRoute>} />
-            <Route path="/lider/atividades" element={<ProtectedRoute allowedRoles={["lider"]}><ActivitiesPage /></ProtectedRoute>} />
-            <Route path="/lider/entregas" element={<ProtectedRoute allowedRoles={["lider"]}><DeliveryTrackingPage /></ProtectedRoute>} />
+            <Route path="/lider/semanas" element={<ProtectedRoute allowedRoles={["lider"]}><WeeksListPage /></ProtectedRoute>} />
+            <Route path="/lider/semanas/:weekId" element={<ProtectedRoute allowedRoles={["lider"]}><WeekDetailPage /></ProtectedRoute>} />
             <Route path="/lider/checklist" element={<ProtectedRoute allowedRoles={["lider"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
-            {/* Participante / Representante routes */}
+            {/* Participante / Representante */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
             <Route path="/participante/ideias" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><IdeasPage /></ProtectedRoute>} />
             <Route path="/participante/ranking" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/participante/grupos" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><GroupsPage /></ProtectedRoute>} />
-            <Route path="/participante/atividades" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ActivitiesPage /></ProtectedRoute>} />
+            <Route path="/participante/semanas" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><WeeksListPage /></ProtectedRoute>} />
+            <Route path="/participante/semanas/:weekId" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><WeekDetailPage /></ProtectedRoute>} />
             <Route path="/participante/checklist" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ChecklistPage /></ProtectedRoute>} />
 
-            {/* Profile routes */}
+            {/* Profile */}
             <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
             <Route path="/perfil/:userId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
