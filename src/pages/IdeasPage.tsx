@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Lightbulb, Plus, Pencil, Trash2, Loader2, Lock,
-  Star, Search, Users, Calendar as CalendarIcon, UserPlus,
+  Star, Search, Users, Calendar as CalendarIcon, Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import CargoSelectDialog, { CARGOS } from "@/components/CargoSelectDialog";
+import { CARGOS } from "@/components/CargoSelectDialog";
 
 interface Idea {
   id: string;
@@ -32,6 +32,7 @@ interface Idea {
   authorName?: string;
   voteCount: number;
   avgRating: number;
+  totalVotes: number;
   groupId?: string | null;
   groupName?: string | null;
   groupMembers: GroupMember[];
@@ -60,7 +61,7 @@ const CATEGORIES = [
 
 const MAX_IDEAS_PER_USER = 2;
 const MAX_VOTES_PER_USER = 5;
-const MAX_PER_GROUP = 5;
+const MAX_GROUPS = 15;
 
 export default function IdeasPage() {
   const { user, profile } = useAuth();
@@ -80,13 +81,6 @@ export default function IdeasPage() {
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [saving, setSaving] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<string | null>(null);
-
-  // Cargo selection
-  const [cargoDialogOpen, setCargoDialogOpen] = useState(false);
-  const [cargoTargetIdea, setCargoTargetIdea] = useState<Idea | null>(null);
-
-  // User's own membership
-  const [userMembership, setUserMembership] = useState<{ group_id: string; cargo: string } | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -130,8 +124,6 @@ export default function IdeasPage() {
       if (user) {
         setUserVotes(allVotes.filter((v) => v.user_id === user.id));
         setUserIdeaCount(rawIdeas.filter((i) => i.created_by === user.id).length);
-        const myMembership = allMembers.find((m) => m.user_id === user.id);
-        setUserMembership(myMembership ? { group_id: myMembership.group_id, cargo: myMembership.cargo } : null);
       }
 
       // Vote counts/averages
@@ -175,6 +167,7 @@ export default function IdeasPage() {
           authorName: i.created_by ? nameMap.get(i.created_by) ?? "Desconhecido" : "Desconhecido",
           voteCount: count,
           avgRating: count > 0 ? sum / count : 0,
+          totalVotes: sum,
           groupId: group?.id ?? null,
           groupName: group?.name ?? null,
           groupMembers: group ? (membersByGroup.get(group.id) ?? []) : [],
@@ -205,6 +198,12 @@ export default function IdeasPage() {
     }
     return result;
   }, [ideas, searchText, filterCategory]);
+
+  // Determine top 15 classified idea IDs by total votes
+  const classifiedIds = useMemo(() => {
+    const sorted = [...ideas].sort((a, b) => b.totalVotes - a.totalVotes || b.avgRating - a.avgRating);
+    return new Set(sorted.slice(0, MAX_GROUPS).map((i) => i.id));
+  }, [ideas]);
 
   const totalUserVotes = useMemo(() => userVotes.length, [userVotes]);
   const getUserRating = useCallback(
@@ -301,43 +300,19 @@ export default function IdeasPage() {
     }
   };
 
-  // Open cargo selection dialog
-  const handleJoinClick = (idea: Idea, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user || !idea.groupId) return;
-    if (userMembership) {
-      toast({ title: "Você já pertence a um grupo", variant: "destructive" });
-      return;
-    }
-    if (idea.groupMembers.length >= MAX_PER_GROUP) {
-      toast({ title: "Grupo já está cheio (5 membros)", variant: "destructive" });
-      return;
-    }
-    setCargoTargetIdea(idea);
-    setCargoDialogOpen(true);
-  };
-
-  const handleConfirmCargo = async (cargo: string) => {
-    if (!user || !cargoTargetIdea?.groupId) return;
-    const { error } = await supabase.from("group_members").insert({
-      group_id: cargoTargetIdea.groupId,
-      user_id: user.id,
-      cargo,
-    } as any);
-    if (error) throw error;
-    // Also update legacy group_id on users table
-    await supabase.from("users").update({ group_id: cargoTargetIdea.groupId }).eq("id", user.id);
-    toast({ title: "Você entrou no grupo!" });
-    setLoading(true);
-    await fetchData();
-  };
-
   const openDetail = (idea: Idea) => {
     setDetailIdea(idea);
   };
 
   const reachedLimit = userIdeaCount >= MAX_IDEAS_PER_USER;
-  const canJoin = config?.joining_open && config?.groups_confirmed;
+
+  // Phase flags
+  const showStars = config?.voting_open === true;
+  const showVoteTotal = config ? (config.voting_open || !config.groups_confirmed || config.groups_confirmed) && !config.ideas_open || !config.voting_open : false;
+  // Show vote totals when voting_open=true OR when voting is closed
+  const showVoteTotals = config ? config.voting_open || (!config.voting_open) : false;
+  // Show classified badge when voting closed
+  const showClassifiedBadge = config ? !config.voting_open : false;
 
   // Cargo badge colors
   const cargoColor = (cargo: string) => {
@@ -411,7 +386,7 @@ export default function IdeasPage() {
           {filteredIdeas.map((idea) => {
             const isOwnIdea = idea.created_by === user?.id;
             const userRating = getUserRating(idea.id);
-            const occupiedCargos = idea.groupMembers.map((m) => m.cargo);
+            const isClassified = classifiedIds.has(idea.id) && idea.totalVotes > 0;
 
             return (
               <div
@@ -421,9 +396,16 @@ export default function IdeasPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-foreground font-medium leading-tight">{idea.title}</h3>
-                  {idea.category && (
-                    <Badge variant="secondary" className="shrink-0 capitalize text-xs">{idea.category}</Badge>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {idea.category && (
+                      <Badge variant="secondary" className="capitalize text-xs">{idea.category}</Badge>
+                    )}
+                    {showClassifiedBadge && isClassified && (
+                      <Badge variant="default" className="text-[10px] gap-0.5">
+                        <Trophy className="h-2.5 w-2.5" /> Classificada
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 {idea.description && (
@@ -441,117 +423,59 @@ export default function IdeasPage() {
                   </button>
                 </div>
 
-                {/* Cargo slots */}
-                {idea.groupId && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {CARGOS.map((cargo) => {
-                      const member = idea.groupMembers.find((m) => m.cargo === cargo.value);
-                      const Icon = cargo.icon;
-                      return (
-                        <div
-                          key={cargo.value}
-                          className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${
-                            member
-                              ? "bg-primary/10 border-primary/30 text-primary"
-                              : cargo.required
-                              ? "bg-destructive/10 border-destructive/30 text-destructive"
-                              : "bg-muted border-border text-muted-foreground"
-                          }`}
-                          title={member ? `${cargo.label}: ${member.full_name}` : `${cargo.label}: Vago`}
+                {/* Star rating - only when voting_open */}
+                {showStars && (
+                  <div className="flex items-center gap-3 pt-2 border-t border-border">
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          className="p-0.5 disabled:cursor-not-allowed"
+                          disabled={votingInProgress === idea.id || isOwnIdea}
+                          onClick={(e) => handleStarRate(idea.id, star, e)}
                         >
-                          <Icon className="h-3 w-3" />
-                          <span>{member ? member.full_name.split(" ")[0] : "Vago"}</span>
-                        </div>
-                      );
-                    })}
+                          <Star className={`h-5 w-5 transition-colors ${
+                            star <= userRating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-muted-foreground/40 hover:text-yellow-400/60"
+                          }`} />
+                        </button>
+                      ))}
+                      {votingInProgress === idea.id && <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {idea.totalVotes > 0 ? `${idea.totalVotes} pts · ${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})` : "Sem avaliações"}
+                    </span>
                   </div>
                 )}
 
-                {/* Star rating */}
-                <div className="flex items-center gap-3 pt-2 border-t border-border">
-                  <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        className="p-0.5 disabled:cursor-not-allowed"
-                        disabled={votingInProgress === idea.id || isOwnIdea || !config?.voting_open}
-                        onClick={(e) => handleStarRate(idea.id, star, e)}
-                      >
-                        <Star className={`h-5 w-5 transition-colors ${
-                          star <= userRating
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-muted-foreground/40 hover:text-yellow-400/60"
-                        }`} />
-                      </button>
-                    ))}
-                    {votingInProgress === idea.id && <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />}
+                {/* Vote totals - when voting_open OR voting closed */}
+                {!showStars && showVoteTotals && idea.totalVotes > 0 && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-border">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-sm font-medium text-foreground">{idea.totalVotes} pts</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({idea.avgRating.toFixed(1)} ★ · {idea.voteCount} votos)
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {idea.avgRating > 0 ? `${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})` : "Sem avaliações"}
-                  </span>
-                </div>
+                )}
 
-                {/* Join group + Admin actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={userMembership?.group_id === idea.groupId && idea.groupId ? "secondary" : "default"}
-                    size="sm"
-                    className="h-8 text-xs gap-1.5"
-                    onClick={(e) => handleJoinClick(idea, e)}
-                    disabled={
-                      !idea.groupId ||
-                      !canJoin ||
-                      !!userMembership ||
-                      idea.groupMembers.length >= MAX_PER_GROUP
-                    }
-                    title={
-                      !idea.groupId ? "Grupo ainda não formado"
-                        : userMembership?.group_id === idea.groupId ? "Você já está neste grupo"
-                        : userMembership ? "Você já pertence a outro grupo"
-                        : !canJoin ? "Entrada em grupos fechada"
-                        : idea.groupMembers.length >= MAX_PER_GROUP ? "Grupo cheio"
-                        : "Entrar neste grupo"
-                    }
-                  >
-                    {userMembership?.group_id === idea.groupId && idea.groupId ? (
-                      <Users className="h-3.5 w-3.5" />
-                    ) : (
-                      <UserPlus className="h-3.5 w-3.5" />
-                    )}
-                    {!idea.groupId
-                      ? "Sem grupo"
-                      : userMembership?.group_id === idea.groupId
-                      ? "Meu grupo"
-                      : `Entrar (${idea.groupMembers.length}/${MAX_PER_GROUP})`}
-                  </Button>
-
-                  {isAdmin && (
-                    <>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => handleDelete(idea.id, e)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {/* Admin actions only */}
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => handleDelete(idea.id, e)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-      )}
-
-      {/* Cargo selection dialog */}
-      {cargoTargetIdea && (
-        <CargoSelectDialog
-          open={cargoDialogOpen}
-          onOpenChange={setCargoDialogOpen}
-          occupiedCargos={cargoTargetIdea.groupMembers.map((m) => m.cargo)}
-          onConfirm={handleConfirmCargo}
-          groupName={cargoTargetIdea.groupName ?? "Grupo"}
-        />
       )}
 
       {/* Create / Edit dialog */}
@@ -624,19 +548,19 @@ export default function IdeasPage() {
                     <CalendarIcon className="h-3.5 w-3.5" />
                     {detailIdea.created_at ? new Date(detailIdea.created_at).toLocaleDateString("pt-BR") : "—"}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                    {detailIdea.avgRating > 0
-                      ? `${detailIdea.avgRating.toFixed(1)} (${detailIdea.voteCount} avaliações)`
-                      : "Sem avaliações"}
-                  </span>
+                  {detailIdea.totalVotes > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                      {detailIdea.totalVotes} pts · {detailIdea.avgRating.toFixed(1)} ★ ({detailIdea.voteCount} votos)
+                    </span>
+                  )}
                 </div>
 
                 {/* Group members with cargo */}
                 {detailIdea.groupName && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Grupo: {detailIdea.groupName} ({detailIdea.groupMembers.length}/{MAX_PER_GROUP} membros)
+                      Grupo: {detailIdea.groupName} ({detailIdea.groupMembers.length}/5 membros)
                     </p>
                     {detailIdea.groupMembers.length > 0 ? (
                       <div className="space-y-1.5">
