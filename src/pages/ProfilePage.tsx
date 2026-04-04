@@ -44,27 +44,22 @@ export default function ProfilePage() {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      if (isOwnProfile) {
-        // Own profile: query users table directly (has all fields via RLS)
-        const { data } = await supabase
-          .from("users")
-          .select("id, full_name, bio, avatar_url, linkedin_url, sexo, idade, estado_civil, estado, cidade, trabalho_estudo, habilidades, objetivos_curto_prazo, objetivos_longo_prazo, instagram_url, cargos_aptos, created_at")
-          .eq("id", userId)
-          .maybeSingle();
-        setProfile(data as ProfileData | null);
+      // Always query users table; RLS controls field visibility for other users.
+      const { data, error: queryError } = await supabase
+        .from("users")
+        .select("id, full_name, bio, avatar_url, linkedin_url, sexo, idade, estado_civil, estado, cidade, trabalho_estudo, habilidades, objetivos_curto_prazo, objetivos_longo_prazo, instagram_url, cargos_aptos, created_at")
+        .eq("id", userId)
+        .maybeSingle();
+      if (queryError) {
+        console.error("[ProfilePage] Error fetching profile:", queryError.message);
+        setProfile(null);
       } else {
-        // Other user: query public view (limited fields)
-        const { data } = await supabase
-          .from("users_public" as any)
-          .select("*")
-          .eq("id", userId)
-          .maybeSingle() as { data: ProfileData | null };
-        setProfile(data);
+        setProfile(data as ProfileData | null);
       }
       setLoading(false);
     };
     load();
-  }, [userId, isOwnProfile]);
+  }, [userId]);
 
   if (loading) {
     return (

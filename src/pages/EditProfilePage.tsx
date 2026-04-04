@@ -212,7 +212,7 @@ export default function EditProfilePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Sexo</Label>
-                <Select value={form.sexo} onValueChange={(v) => set("sexo", v)}>
+                <Select value={form.sexo || undefined} onValueChange={(v) => set("sexo", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {SEXO_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -226,7 +226,7 @@ export default function EditProfilePage() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Estado civil</Label>
-              <Select value={form.estado_civil} onValueChange={(v) => set("estado_civil", v)}>
+              <Select value={form.estado_civil || undefined} onValueChange={(v) => set("estado_civil", v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_CIVIL_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -242,7 +242,7 @@ export default function EditProfilePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Estado</Label>
-              <Select value={form.estado} onValueChange={(v) => set("estado", v)}>
+              <Select value={form.estado || undefined} onValueChange={(v) => set("estado", v)}>
                 <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
                 <SelectContent>
                   {ESTADOS_BR.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}

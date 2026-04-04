@@ -1,6 +1,7 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   LayoutDashboard,
   Users,
@@ -8,11 +9,12 @@ import {
   Calendar,
   Lightbulb,
   Layers,
-  ClipboardCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Menu,
+  X,
 } from "lucide-react";
 import garraLogo from "@/assets/logo-garra.png";
 
@@ -40,14 +42,14 @@ const navByRole: Record<string, NavItem[]> = {
   ],
   participante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
-    { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
+    { label: "Meu Grupo", icon: Users, path: "/participante/grupos" },
     { label: "Semanas", icon: Calendar, path: "/participante/semanas" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
   ],
   representante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
-    { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
+    { label: "Meu Grupo", icon: Users, path: "/participante/grupos" },
     { label: "Semanas", icon: Calendar, path: "/participante/semanas" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
@@ -62,9 +64,26 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const { profile, signOut, loading, error } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
+
+  // Close mobile sidebar on navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobile && mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [isMobile, mobileOpen]);
 
   const role = profile?.role ?? "participante";
   const navItems = navByRole[role] ?? navByRole.participante;
@@ -99,101 +118,169 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     );
   }
 
-  return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside
-        className="fixed top-0 left-0 h-screen z-30 flex flex-col transition-all duration-300 border-r"
-        style={{
-          width: collapsed ? 64 : 220,
-          background: "rgba(255,255,255,0.03)",
-          borderColor: "rgba(255,255,255,0.08)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-4 h-16 border-b border-border shrink-0">
-          <img src={garraLogo} alt="Garra Projects" className="w-8 h-8 shrink-0 object-contain" />
-          {!collapsed && (
-            <span className="font-semibold text-foreground text-sm whitespace-nowrap">
-              Garra Projects
-            </span>
-          )}
-        </div>
+  const sidebarWidth = collapsed ? 64 : 220;
 
-        {/* Nav */}
-        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const active = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  active
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
-        </nav>
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-4 h-16 border-b border-border shrink-0">
+        <img src={garraLogo} alt="Garra Projects" className="w-8 h-8 shrink-0 object-contain" />
+        {(!collapsed || isMobile) && (
+          <span className="font-semibold text-foreground text-sm whitespace-nowrap">
+            Garra Projects
+          </span>
+        )}
+        {isMobile && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Fechar menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
 
-        {/* Collapse toggle */}
+      {/* Nav */}
+      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+        {navItems.map((item) => {
+          const active = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                active
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              }`}
+              title={collapsed && !isMobile ? item.label : undefined}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {(!collapsed || isMobile) && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Collapse toggle — desktop only */}
+      {!isMobile && (
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="flex items-center justify-center h-10 border-t border-border text-muted-foreground hover:text-foreground transition-colors"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
+      )}
 
-        {/* User footer */}
-        <div className="border-t border-border px-3 py-3 flex items-center gap-3">
-          <Link
-            to={profile?.id ? `/perfil/${profile.id}` : "#"}
-            className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
-            title="Ver perfil"
-          >
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
-                {initials}
-              </div>
-            )}
-          </Link>
-          {!collapsed && (
-            <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-              <p className="text-sm text-foreground truncate">{profile?.full_name ?? "..."}</p>
-              <p className="text-xs text-muted-foreground truncate capitalize">{role}</p>
-            </Link>
+      {/* User footer */}
+      <div className="border-t border-border px-3 py-3 flex items-center gap-3">
+        <Link
+          to={profile?.id ? `/perfil/${profile.id}` : "#"}
+          className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
+          title="Ver perfil"
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
+              {initials}
+            </div>
           )}
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-            title="Sair"
-          >
-            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-          </button>
-        </div>
-      </aside>
+        </Link>
+        {(!collapsed || isMobile) && (
+          <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+            <p className="text-sm text-foreground truncate">{profile?.full_name ?? "..."}</p>
+            <p className="text-xs text-muted-foreground truncate capitalize">{role}</p>
+          </Link>
+        )}
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+          title="Sair"
+        >
+          {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Mobile backdrop */}
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar — mobile: overlay; desktop: fixed column */}
+      {isMobile ? (
+        <aside
+          className="fixed top-0 left-0 h-screen z-50 flex flex-col transition-transform duration-300"
+          style={{
+            width: 260,
+            transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+            background: "rgba(10,10,15,0.97)",
+            borderRight: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          {sidebarContent}
+        </aside>
+      ) : (
+        <aside
+          className="fixed top-0 left-0 h-screen z-30 flex flex-col transition-all duration-300 border-r"
+          style={{
+            width: sidebarWidth,
+            background: "rgba(255,255,255,0.03)",
+            borderColor: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          {sidebarContent}
+        </aside>
+      )}
 
       {/* Main content */}
       <main
-        className="flex-1 transition-all duration-300"
-        style={{ marginLeft: collapsed ? 64 : 220 }}
+        className="flex-1 transition-all duration-300 min-w-0"
+        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
       >
         {/* Header */}
-        <header className="h-16 flex items-center px-6 border-b border-border">
-          <h1 className="section-label">{title}</h1>
+        <header className="h-16 flex items-center px-4 md:px-6 gap-3 border-b border-border">
+          {isMobile && (
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+          <h1 className="section-label truncate flex-1">{title}</h1>
+          {/* Profile avatar — mobile header */}
+          {isMobile && (
+            <Link
+              to={profile?.id ? `/perfil/${profile.id}` : "#"}
+              className="w-8 h-8 rounded-full shrink-0 hover:ring-2 hover:ring-primary/40 transition-all overflow-hidden"
+              title="Ver perfil"
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile?.full_name ?? "Perfil"} className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold rounded-full">
+                  {initials}
+                </div>
+              )}
+            </Link>
+          )}
         </header>
 
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6">{children}</div>
       </main>
     </div>
   );
