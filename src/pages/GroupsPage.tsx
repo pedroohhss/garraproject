@@ -145,7 +145,7 @@ export default function GroupsPage() {
     fetchData().finally(() => clearTimeout(timeout));
   }, [fetchData]);
 
-  const canJoin = config?.joining_open && config?.groups_confirmed;
+  const canJoin = config?.joining_open === true;
 
   const handleJoinClick = (group: GroupData, e: React.MouseEvent) => {
     e.stopPropagation();
