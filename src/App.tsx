@@ -12,6 +12,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
 import IdeasPage from "./pages/IdeasPage";
+import RankingPage from "./pages/RankingPage";
+import GroupsPage from "./pages/GroupsPage";
 import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import { Loader2 } from "lucide-react";
@@ -78,14 +80,20 @@ const App = () => (
             {/* Admin routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/ideias" element={<ProtectedRoute allowedRoles={["admin"]}><IdeasPage /></ProtectedRoute>} />
+            <Route path="/admin/ranking" element={<ProtectedRoute allowedRoles={["admin"]}><RankingPage /></ProtectedRoute>} />
+            <Route path="/admin/grupos" element={<ProtectedRoute allowedRoles={["admin"]}><GroupsPage /></ProtectedRoute>} />
 
             {/* Lider routes */}
             <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
             <Route path="/lider/ideias" element={<ProtectedRoute allowedRoles={["lider"]}><IdeasPage /></ProtectedRoute>} />
+            <Route path="/lider/ranking" element={<ProtectedRoute allowedRoles={["lider"]}><RankingPage /></ProtectedRoute>} />
+            <Route path="/lider/grupos" element={<ProtectedRoute allowedRoles={["lider"]}><GroupsPage /></ProtectedRoute>} />
 
             {/* Participante / Representante routes */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
             <Route path="/participante/ideias" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><IdeasPage /></ProtectedRoute>} />
+            <Route path="/participante/ranking" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><RankingPage /></ProtectedRoute>} />
+            <Route path="/participante/grupos" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><GroupsPage /></ProtectedRoute>} />
 
             {/* Profile routes */}
             <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
