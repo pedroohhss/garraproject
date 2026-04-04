@@ -583,6 +583,42 @@ export type Database = {
       }
     }
     Views: {
+      deliveries_scores: {
+        Row: {
+          activity_id: string | null
+          admin_score: number | null
+          group_id: string | null
+          id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          admin_score?: number | null
+          group_id?: string | null
+          id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          admin_score?: number | null
+          group_id?: string | null
+          id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users_public: {
         Row: {
           avatar_url: string | null
