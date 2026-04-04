@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
 interface Week { id: string; number: number; title: string; is_active: boolean }
 interface Criterion { id: string; week_id: string | null; description: string | null; points: number | null }
