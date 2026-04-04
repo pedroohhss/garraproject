@@ -18,6 +18,7 @@ import ActivitiesPage from "./pages/ActivitiesPage";
 import DeliveryTrackingPage from "./pages/DeliveryTrackingPage";
 import ChecklistPage from "./pages/ChecklistPage";
 import ChecklistTrackingPage from "./pages/ChecklistTrackingPage";
+import AdminChecklistPage from "./pages/AdminChecklistPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
