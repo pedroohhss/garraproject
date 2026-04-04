@@ -1,0 +1,31 @@
+{
+  "nav": {
+    "dashboard": "Painel",
+    "users": "Usuários",
+    "groups": "Grupos",
+    "myGroups": "Meus Grupos",
+    "myGroup": "Meu Grupo",
+    "ranking": "Ranking",
+    "weeks": "Semanas",
+    "ideas": "Ideias",
+    "checklist": "Checklist"
+  },
+  "breadcrumb": {
+    "home": "Painel",
+    "profile": "Perfil",
+    "editProfile": "Editar Perfil"
+  },
+  "layout": {
+    "appName": "Garra Projects",
+    "closeMenu": "Fechar menu",
+    "openMenu": "Abrir menu",
+    "expandMenu": "Expandir menu",
+    "collapseMenu": "Recolher menu",
+    "viewProfile": "Ver perfil",
+    "reloadPage": "Recarregar página",
+    "logout": "Sair",
+    "logoutTitle": "Sair da conta",
+    "logoutDescription": "Tem certeza que deseja sair? Você precisará fazer login novamente para acessar o sistema.",
+    "cancel": "Cancelar"
+  }
+}

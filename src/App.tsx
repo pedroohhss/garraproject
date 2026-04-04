@@ -126,7 +126,7 @@ const App = () => (
             <Route path="/participante/checklist" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ChecklistPage /></ProtectedRoute>} />
 
             {/* Profile */}
-            <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+            <Route path="/perfil/:userId/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
             <Route path="/perfil/:userId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />

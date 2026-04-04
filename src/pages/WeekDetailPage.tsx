@@ -142,7 +142,7 @@ export default function WeekDetailPage() {
   const showDeliveries = isAdmin || isLider;
 
   return (
-    <DashboardLayout title={`Semana ${week.number} — ${week.title}`}>
+    <DashboardLayout title={`Semana ${week.number} — ${week.title}`} breadcrumbLabel={`Semana ${week.number} — ${week.title}`}>
       <Button variant="ghost" size="sm" onClick={() => navigate(`${rolePrefix}/semanas`)} className="gap-1.5 mb-4">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Button>

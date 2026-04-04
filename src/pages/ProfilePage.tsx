@@ -131,7 +131,7 @@ export default function ProfilePage() {
                 </a>
               )}
               {isOwnProfile && (
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => navigate("/perfil/editar")}>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => navigate(`/perfil/${userId}/editar`)}>
                   <Pencil className="h-3.5 w-3.5" /> Editar
                 </Button>
               )}
