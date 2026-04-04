@@ -261,6 +261,16 @@ export default function IdeasPage() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Delete related votes first to avoid foreign key constraint
+    await supabase.from("votes").delete().eq("idea_id", id);
+    // Delete related groups and their members
+    const { data: relatedGroups } = await supabase.from("groups").select("id").eq("idea_id", id);
+    if (relatedGroups && relatedGroups.length > 0) {
+      for (const g of relatedGroups) {
+        await supabase.from("group_members").delete().eq("group_id", g.id);
+      }
+      await supabase.from("groups").delete().eq("idea_id", id);
+    }
     const { error } = await supabase.from("ideas").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
