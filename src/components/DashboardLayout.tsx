@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -32,6 +33,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Ranking", icon: FileText, path: "/admin/ranking" },
     { label: "Semanas", icon: Calendar, path: "/admin/semanas" },
     { label: "Atividades", icon: ClipboardList, path: "/admin/atividades" },
+    { label: "Entregas", icon: Send, path: "/admin/entregas" },
     { label: "Ideias", icon: Lightbulb, path: "/admin/ideias" },
     { label: "Materiais", icon: BookOpen, path: "/admin/materiais" },
     { label: "Configurações", icon: Settings, path: "/admin/config" },
@@ -39,6 +41,8 @@ const navByRole: Record<string, NavItem[]> = {
   lider: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/lider" },
     { label: "Meus Grupos", icon: Layers, path: "/lider/grupos" },
+    { label: "Atividades", icon: ClipboardList, path: "/lider/atividades" },
+    { label: "Entregas", icon: Send, path: "/lider/entregas" },
     { label: "Ranking", icon: FileText, path: "/lider/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/lider/ideias" },
     { label: "Semana Atual", icon: Calendar, path: "/lider/semana" },
@@ -47,6 +51,7 @@ const navByRole: Record<string, NavItem[]> = {
   participante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
     { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
+    { label: "Atividades", icon: ClipboardList, path: "/participante/atividades" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
     { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },
@@ -55,6 +60,7 @@ const navByRole: Record<string, NavItem[]> = {
   representante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
     { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
+    { label: "Atividades", icon: ClipboardList, path: "/participante/atividades" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
     { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },

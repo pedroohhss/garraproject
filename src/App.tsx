@@ -13,6 +13,9 @@ import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminWeeksPage from "./pages/AdminWeeksPage";
+import AdminActivitiesPage from "./pages/AdminActivitiesPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import DeliveryTrackingPage from "./pages/DeliveryTrackingPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
@@ -86,18 +89,23 @@ const App = () => (
             <Route path="/admin/ranking" element={<ProtectedRoute allowedRoles={["admin"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/admin/grupos" element={<ProtectedRoute allowedRoles={["admin"]}><GroupsPage /></ProtectedRoute>} />
             <Route path="/admin/semanas" element={<ProtectedRoute allowedRoles={["admin"]}><AdminWeeksPage /></ProtectedRoute>} />
+            <Route path="/admin/atividades" element={<ProtectedRoute allowedRoles={["admin"]}><AdminActivitiesPage /></ProtectedRoute>} />
+            <Route path="/admin/entregas" element={<ProtectedRoute allowedRoles={["admin"]}><DeliveryTrackingPage /></ProtectedRoute>} />
 
             {/* Lider routes */}
             <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
             <Route path="/lider/ideias" element={<ProtectedRoute allowedRoles={["lider"]}><IdeasPage /></ProtectedRoute>} />
             <Route path="/lider/ranking" element={<ProtectedRoute allowedRoles={["lider"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/lider/grupos" element={<ProtectedRoute allowedRoles={["lider"]}><GroupsPage /></ProtectedRoute>} />
+            <Route path="/lider/atividades" element={<ProtectedRoute allowedRoles={["lider"]}><ActivitiesPage /></ProtectedRoute>} />
+            <Route path="/lider/entregas" element={<ProtectedRoute allowedRoles={["lider"]}><DeliveryTrackingPage /></ProtectedRoute>} />
 
             {/* Participante / Representante routes */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
             <Route path="/participante/ideias" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><IdeasPage /></ProtectedRoute>} />
             <Route path="/participante/ranking" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/participante/grupos" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><GroupsPage /></ProtectedRoute>} />
+            <Route path="/participante/atividades" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ActivitiesPage /></ProtectedRoute>} />
 
             {/* Profile routes */}
             <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
