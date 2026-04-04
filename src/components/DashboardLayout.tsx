@@ -31,7 +31,6 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Semanas", icon: Calendar, path: "/admin/semanas" },
     { label: "Checklist", icon: ClipboardCheck, path: "/admin/checklist/acompanhamento" },
     { label: "Ideias", icon: Lightbulb, path: "/admin/ideias" },
-    { label: "Configurações", icon: Settings, path: "/admin/config" },
   ],
   lider: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/lider" },
