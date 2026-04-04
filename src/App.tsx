@@ -102,6 +102,7 @@ const App = () => (
             <Route path="/lider/grupos" element={<ProtectedRoute allowedRoles={["lider"]}><GroupsPage /></ProtectedRoute>} />
             <Route path="/lider/atividades" element={<ProtectedRoute allowedRoles={["lider"]}><ActivitiesPage /></ProtectedRoute>} />
             <Route path="/lider/entregas" element={<ProtectedRoute allowedRoles={["lider"]}><DeliveryTrackingPage /></ProtectedRoute>} />
+            <Route path="/lider/checklist" element={<ProtectedRoute allowedRoles={["lider"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
             {/* Participante / Representante routes */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
