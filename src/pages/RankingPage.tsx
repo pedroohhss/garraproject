@@ -29,7 +29,7 @@ export default function RankingPage() {
         supabase.from("groups").select("id, name"),
         supabase.from("checklist_criteria").select("id, week_id, points"),
         supabase.from("checklist_entries").select("criterion_id, group_id, completed"),
-        supabase.from("deliveries").select("group_id, submitted_at, admin_score, activity_id"),
+        supabase.from("deliveries_scores" as any).select("group_id, admin_score, activity_id"),
         supabase.from("activities").select("id, week_id"),
       ]);
 
