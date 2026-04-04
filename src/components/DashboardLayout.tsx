@@ -16,6 +16,15 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import garraLogo from "@/assets/logo-garra.png";
 
 interface NavItem {
@@ -63,9 +72,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const { profile, signOut, loading, error } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar:collapsed") === "true");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -92,6 +102,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     : "?";
 
   const handleSignOut = async () => {
+    setShowLogoutConfirm(false);
     setSigningOut(true);
     await signOut();
     navigate("/login");
@@ -144,7 +155,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Nav */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const active = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          const isPrefixOfOther = navItems.some((other) => other.path !== item.path && other.path.startsWith(item.path + "/"));
+          const active = location.pathname === item.path || (!isPrefixOfOther && location.pathname.startsWith(item.path + "/"));
           return (
             <Link
               key={item.path}
@@ -166,7 +178,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Collapse toggle — desktop only */}
       {!isMobile && (
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => { const next = !collapsed; setCollapsed(next); localStorage.setItem("sidebar:collapsed", String(next)); }}
           className="flex items-center justify-center h-10 border-t border-border text-muted-foreground hover:text-foreground transition-colors"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -174,39 +186,83 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       )}
 
       {/* User footer */}
-      <div className="border-t border-border px-3 py-3 flex items-center gap-3">
-        <Link
-          to={profile?.id ? `/perfil/${profile.id}` : "#"}
-          className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
-          title="Ver perfil"
-        >
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
-          ) : (
-            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
-              {initials}
-            </div>
-          )}
-        </Link>
-        {(!collapsed || isMobile) && (
+      {collapsed && !isMobile ? (
+        <div className="border-t border-border px-1 py-3 flex items-center gap-2">
+          <Link
+            to={profile?.id ? `/perfil/${profile.id}` : "#"}
+            className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
+            title="Ver perfil"
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
+                {initials}
+              </div>
+            )}
+          </Link>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            disabled={signingOut}
+            className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            title="Sair"
+          >
+            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          </button>
+        </div>
+      ) : (
+        <div className="border-t border-border px-3 py-3 flex items-center gap-3">
+          <Link
+            to={profile?.id ? `/perfil/${profile.id}` : "#"}
+            className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
+            title="Ver perfil"
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
+                {initials}
+              </div>
+            )}
+          </Link>
           <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
             <p className="text-sm text-foreground truncate">{profile?.full_name ?? "..."}</p>
             <p className="text-xs text-muted-foreground truncate capitalize">{role}</p>
           </Link>
-        )}
-        <button
-          onClick={handleSignOut}
-          disabled={signingOut}
-          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-          title="Sair"
-        >
-          {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-        </button>
-      </div>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            disabled={signingOut}
+            className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            title="Sair"
+          >
+            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          </button>
+        </div>
+      )}
     </>
   );
 
   return (
+    <>
+    <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Sair da conta</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja sair? Você precisará fazer login novamente para acessar o sistema.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={handleSignOut} disabled={signingOut}>
+            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+            Sair
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <div className="min-h-screen flex">
       {/* Mobile backdrop */}
       {isMobile && mobileOpen && (
@@ -220,7 +276,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Sidebar — mobile: overlay; desktop: fixed column */}
       {isMobile ? (
         <aside
-          className="fixed top-0 left-0 h-screen z-50 flex flex-col transition-transform duration-300"
+          className="fixed top-0 left-0 h-[100dvh] z-50 flex flex-col transition-transform duration-300"
           style={{
             width: 260,
             transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
@@ -252,15 +308,13 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       >
         {/* Header */}
         <header className="h-16 flex items-center px-4 md:px-6 gap-3 border-b border-border">
-          {isMobile && (
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              aria-label="Abrir menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          )}
+          <button
+            onClick={() => isMobile ? setMobileOpen(true) : (setCollapsed(prev => { const next = !prev; localStorage.setItem("sidebar:collapsed", String(next)); return next; }))}
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            aria-label={isMobile ? "Abrir menu" : collapsed ? "Expandir menu" : "Recolher menu"}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <h1 className="section-label truncate flex-1">{title}</h1>
           {/* Profile avatar — mobile header */}
           {isMobile && (
@@ -283,5 +337,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         <div className="p-4 md:p-6">{children}</div>
       </main>
     </div>
+    </>
   );
 }

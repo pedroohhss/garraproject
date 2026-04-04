@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
@@ -46,9 +47,22 @@ function RoleRedirect() {
 }
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+
+  const hasStoredToken = Object.keys(localStorage).some(
+    (key) => key.startsWith("sb-") && key.endsWith("-auth-token")
+  );
+
+  // Token was deleted externally — clear in-memory session to avoid redirect loop
+  useEffect(() => {
+    if (user && !hasStoredToken) {
+      signOut();
+    }
+  }, [user, hasStoredToken]);
 
   if (loading) return <LoadingScreen />;
+  // Token gone but signOut still in flight — show loading instead of redirecting
+  if (user && !hasStoredToken) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
 
   if (allowedRoles && profile) {

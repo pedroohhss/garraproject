@@ -10,12 +10,19 @@ import { Loader2 } from "lucide-react";
 
 const MAX_PARTICIPANTS = 75;
 
+interface FieldErrors {
+  fullName?: string;
+  email?: string;
+  password?: string;
+}
+
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [count, setCount] = useState<number | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,14 +40,25 @@ export default function Register() {
 
   const isFull = count !== null && count >= MAX_PARTICIPANTS;
 
+  const validate = (): FieldErrors => {
+    const errs: FieldErrors = {};
+    if (!fullName.trim()) errs.fullName = "Nome completo é obrigatório.";
+    if (!email.trim()) errs.email = "Email é obrigatório.";
+    if (!password) errs.password = "Senha é obrigatória.";
+    else if (password.length < 8) errs.password = "A senha deve ter no mínimo 8 caracteres.";
+    return errs;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isFull) return;
-    if (password.length < 8) {
-      toast.error("A senha deve ter no mínimo 8 caracteres");
+
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
-
+    setErrors({});
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
@@ -55,10 +73,14 @@ export default function Register() {
     if (error) {
       if (error.status === 429) {
         toast.error("Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente.");
-      } else if (error.message.includes("invalid")) {
+      } else if (error.message.toLowerCase().includes("already registered") || error.message.toLowerCase().includes("already been registered")) {
+        toast.error("Este email já está cadastrado. Faça login.");
+      } else if (error.message.toLowerCase().includes("invalid") || error.message.toLowerCase().includes("email")) {
         toast.error("Endereço de email inválido.");
+      } else if (error.message.toLowerCase().includes("password")) {
+        toast.error("Senha muito fraca. Use no mínimo 8 caracteres.");
       } else {
-        toast.error(error.message);
+        toast.error("Erro ao criar conta. Tente novamente.");
       }
       setLoading(false);
       return;
@@ -104,44 +126,49 @@ export default function Register() {
             <p className="label-sm">Todas as vagas foram preenchidas.</p>
           </div>
         ) : (
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-5" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="name" className="label-sm">Nome completo</Label>
+              <Label htmlFor="name" className="label-sm">
+                Nome completo <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="bg-secondary/50 border-border"
+                onChange={(e) => { setFullName(e.target.value); setErrors((prev) => ({ ...prev, fullName: undefined })); }}
+                className={`bg-secondary/50 border-border ${errors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 placeholder="Seu nome completo"
               />
+              {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="label-sm">Email</Label>
+              <Label htmlFor="email" className="label-sm">
+                Email <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-secondary/50 border-border"
+                onChange={(e) => { setEmail(e.target.value); setErrors((prev) => ({ ...prev, email: undefined })); }}
+                className={`bg-secondary/50 border-border ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 placeholder="seu@email.com"
               />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="label-sm">Senha</Label>
+              <Label htmlFor="password" className="label-sm">
+                Senha <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="bg-secondary/50 border-border"
+                onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined })); }}
+                className={`bg-secondary/50 border-border ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 placeholder="Mínimo 8 caracteres"
               />
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
 
             <Button
