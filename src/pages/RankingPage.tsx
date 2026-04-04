@@ -39,7 +39,7 @@ export default function RankingPage() {
       const allGroups = groupsRes.data ?? [];
       const allCriteria = criteriaRes.data ?? [];
       const allEntries = entriesRes.data ?? [];
-      const allDeliveries = (deliveriesRes.data ?? []) as { group_id: string | null; submitted_at: string | null; admin_score: number | null; activity_id: string | null }[];
+      const allDeliveries = (deliveriesRes.data ?? []) as unknown as { group_id: string | null; admin_score: number | null; activity_id: string | null }[];
       const allActivities = activitiesRes.data ?? [];
 
       const criterionMap = new Map(allCriteria.map((c) => [c.id, c]));
