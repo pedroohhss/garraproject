@@ -817,6 +817,7 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState("");
   const [savingFeedback, setSavingFeedback] = useState(false);
 
   const getDelivery = (aId: string, gId: string) => deliveries.find((d) => d.activity_id === aId && d.group_id === gId);
@@ -828,14 +829,18 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
 
   const openDetail = (a: Activity, g: GroupInfo) => {
     const del = getDelivery(a.id, g.id);
-    setSelectedActivity(a); setSelectedGroup(g); setSelectedDelivery(del ?? null); setFeedback(del?.admin_feedback ?? "");
+    setSelectedActivity(a); setSelectedGroup(g); setSelectedDelivery(del ?? null); setFeedback(del?.admin_feedback ?? ""); setScore(del?.admin_score != null ? String(del.admin_score) : "");
   };
 
   const handleSaveFeedback = async () => {
     if (!selectedDelivery) return;
+    const parsedScore = score.trim() === "" ? null : parseInt(score, 10);
+    if (parsedScore !== null && (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100)) {
+      toast({ title: "Nota deve ser entre 0 e 100", variant: "destructive" }); return;
+    }
     setSavingFeedback(true);
-    await supabase.from("deliveries").update({ admin_feedback: feedback.trim() || null }).eq("id", selectedDelivery.id);
-    toast({ title: "Feedback salvo" }); setSavingFeedback(false); await onReload();
+    await supabase.from("deliveries").update({ admin_feedback: feedback.trim() || null, admin_score: parsedScore }).eq("id", selectedDelivery.id);
+    toast({ title: "Avaliação salva" }); setSavingFeedback(false); await onReload();
   };
 
   const hasLate = (gId: string) => activities.some((a) => getCellStatus(a, getDelivery(a.id, gId)) === "atrasado");
