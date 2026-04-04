@@ -110,7 +110,7 @@ export default function AdminWeeksPage() {
     const now = new Date().toISOString().split("T")[0];
     const { error } = await supabase
       .from("weeks")
-      .update({ is_active: true, starts_at: activateTarget.starts_at ?? now })
+      .update({ is_active: true, starts_at: activateTarget.starts_at ?? now, ends_at: null })
       .eq("id", activateTarget.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
