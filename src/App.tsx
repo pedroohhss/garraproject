@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import LiderDashboard from "./pages/LiderDashboard";
 import ParticipanteDashboard from "./pages/ParticipanteDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
