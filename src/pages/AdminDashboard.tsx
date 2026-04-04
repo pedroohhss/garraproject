@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
@@ -136,6 +136,84 @@ export default function AdminDashboard() {
     load();
   }, []);
 
+  const [creatingGroups, setCreatingGroups] = useState(false);
+
+  const createGroupsFromTopIdeas = useCallback(async () => {
+    setCreatingGroups(true);
+    try {
+      // Fetch ideas + votes
+      const [ideasRes, votesRes] = await Promise.all([
+        supabase.from("ideas").select("id, title, created_by"),
+        supabase.from("votes").select("idea_id, quantity"),
+      ]);
+      const allIdeas = ideasRes.data ?? [];
+      const allVotes = votesRes.data ?? [];
+
+      // Sum votes per idea
+      const voteSumMap = new Map<string, number>();
+      allVotes.forEach((v) => {
+        if (v.idea_id) {
+          voteSumMap.set(v.idea_id, (voteSumMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
+        }
+      });
+
+      const ranked = allIdeas
+        .map((i) => ({ ...i, totalVotes: voteSumMap.get(i.id) ?? 0 }))
+        .sort((a, b) => b.totalVotes - a.totalVotes);
+
+      if (ranked.length === 0) {
+        toast({ title: "Nenhuma ideia para formar grupos", variant: "destructive" });
+        return;
+      }
+
+      // Determine top 15, handling ties
+      const MAX = 15;
+      let selected = ranked.slice(0, MAX);
+      const cutoffScore = selected.length === MAX ? selected[MAX - 1].totalVotes : -1;
+      const tiedBeyond = ranked.slice(MAX).filter((i) => i.totalVotes === cutoffScore && cutoffScore > 0);
+
+      if (tiedBeyond.length > 0) {
+        // Include all tied ideas
+        selected = [...selected, ...tiedBeyond];
+        toast({
+          title: "⚠️ Empate detectado",
+          description: `Há ideias empatadas com ${cutoffScore} pts na posição de corte. ${selected.length} grupos foram criados. Resolva manualmente se necessário.`,
+        });
+      }
+
+      // Create groups
+      for (const idea of selected) {
+        const { data: group, error: groupErr } = await supabase
+          .from("groups")
+          .insert({ name: idea.title, idea_id: idea.id, leader_id: idea.created_by })
+          .select("id")
+          .single();
+        if (groupErr) throw groupErr;
+
+        if (idea.created_by) {
+          const { error: memberErr } = await supabase
+            .from("group_members")
+            .insert({ group_id: group.id, user_id: idea.created_by, cargo: "fundador" as any });
+          if (memberErr) throw memberErr;
+
+          await supabase.from("users").update({ group_id: group.id }).eq("id", idea.created_by);
+        }
+      }
+
+      // Set groups_confirmed = true
+      if (config) {
+        await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", config.id);
+        setConfig((prev) => prev ? { ...prev, groups_confirmed: true } : prev);
+      }
+
+      toast({ title: `${selected.length} grupos criados com sucesso!` });
+    } catch (err: any) {
+      toast({ title: "Erro ao criar grupos", description: err.message, variant: "destructive" });
+    } finally {
+      setCreatingGroups(false);
+    }
+  }, [config]);
+
   const handleToggle = useCallback(
     async (key: keyof Omit<ChallengeConfig, "id">, value: boolean) => {
       if (!config) return;
@@ -147,9 +225,15 @@ export default function AdminDashboard() {
       if (error) {
         setConfig((prev) => (prev ? { ...prev, [key]: !value } : prev));
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      // Auto-create groups when voting_open toggled OFF
+      if (key === "voting_open" && value === false && !config.groups_confirmed) {
+        await createGroupsFromTopIdeas();
       }
     },
-    [config]
+    [config, createGroupsFromTopIdeas]
   );
 
   const cards = [
@@ -192,8 +276,19 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {TOGGLE_ITEMS.map((item) => (
               <div key={item.key} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
-                <span className="text-sm text-foreground">{item.label}</span>
-                <Switch checked={config[item.key] as boolean} onCheckedChange={(val) => handleToggle(item.key, val)} />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground">{item.label}</span>
+                  {item.key === "voting_open" && creatingGroups && (
+                    <span className="flex items-center gap-1 text-xs text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Criando grupos...
+                    </span>
+                  )}
+                </div>
+                <Switch
+                  checked={config[item.key] as boolean}
+                  onCheckedChange={(val) => handleToggle(item.key, val)}
+                  disabled={creatingGroups}
+                />
               </div>
             ))}
           </div>
