@@ -263,7 +263,7 @@ export default function AdminWeeksPage() {
                 key={week.id}
                 className={cn(
                   "glass-card p-6 space-y-4 transition-all",
-                  status === "ativa" && "ring-2 ring-primary/50",
+                  status === "ativa" && "ring-2 ring-primary/50 bg-primary/5",
                   isEncerrada && "opacity-60"
                 )}
               >
