@@ -308,15 +308,13 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       >
         {/* Header */}
         <header className="h-16 flex items-center px-4 md:px-6 gap-3 border-b border-border">
-          {isMobile && (
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              aria-label="Abrir menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          )}
+          <button
+            onClick={() => isMobile ? setMobileOpen(true) : (setCollapsed(prev => { const next = !prev; localStorage.setItem("sidebar:collapsed", String(next)); return next; }))}
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            aria-label={isMobile ? "Abrir menu" : collapsed ? "Expandir menu" : "Recolher menu"}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <h1 className="section-label truncate flex-1">{title}</h1>
           {/* Profile avatar — mobile header */}
           {isMobile && (
