@@ -40,7 +40,6 @@ const TOGGLE_ITEMS: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] 
   { key: "registration_open", label: "Cadastro aberto" },
   { key: "ideas_open", label: "Cadastro de ideias" },
   { key: "voting_open", label: "Votação" },
-  { key: "groups_confirmed", label: "Grupos confirmados" },
   { key: "joining_open", label: "Entrada nos grupos" },
 ];
 
