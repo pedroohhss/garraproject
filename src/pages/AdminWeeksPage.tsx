@@ -307,6 +307,16 @@ export default function AdminWeeksPage() {
                       <Play className="h-3 w-3" /> Ativar
                     </Button>
                   )}
+                  {status === "encerrada" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setActivateTarget(week)}
+                      className="gap-1 text-xs"
+                    >
+                      <Play className="h-3 w-3" /> Reativar
+                    </Button>
+                  )}
                   {status === "ativa" && (
                     <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
                       <CheckCircle2 className="h-3 w-3" /> Em andamento
