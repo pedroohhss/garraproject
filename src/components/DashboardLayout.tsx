@@ -116,9 +116,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       >
         {/* Logo */}
         <div className="flex items-center gap-2 px-4 h-16 border-b border-border shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-            G
-          </div>
+          <img src={garraLogo} alt="Garra Projects" className="w-8 h-8 shrink-0 object-contain" />
           {!collapsed && (
             <span className="font-semibold text-foreground text-sm whitespace-nowrap">
               Garra Projects
