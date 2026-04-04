@@ -286,17 +286,15 @@ export default function AdminWeeksPage() {
                   <span>Fim: {formatDate(week.ends_at)}</span>
                 </div>
 
-                <div className="flex gap-2 pt-1">
-                  {!isEncerrada && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openEdit(week)}
-                      className="gap-1 text-xs"
-                    >
-                      <Pencil className="h-3 w-3" /> Editar
-                    </Button>
-                  )}
+                <div className="flex gap-2 pt-1 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openEdit(week)}
+                    className="gap-1 text-xs"
+                  >
+                    <Pencil className="h-3 w-3" /> Editar
+                  </Button>
                   {status === "futura" && (
                     <Button
                       size="sm"
