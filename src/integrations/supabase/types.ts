@@ -588,17 +588,10 @@ export type Database = {
           cidade: string | null
           created_at: string | null
           estado: string | null
-          estado_civil: string | null
           full_name: string | null
-          habilidades: string | null
           id: string | null
-          idade: number | null
           instagram_url: string | null
           linkedin_url: string | null
-          objetivos_curto_prazo: string | null
-          objetivos_longo_prazo: string | null
-          sexo: string | null
-          trabalho_estudo: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -607,17 +600,10 @@ export type Database = {
           cidade?: string | null
           created_at?: string | null
           estado?: string | null
-          estado_civil?: string | null
           full_name?: string | null
-          habilidades?: string | null
           id?: string | null
-          idade?: number | null
           instagram_url?: string | null
           linkedin_url?: string | null
-          objetivos_curto_prazo?: string | null
-          objetivos_longo_prazo?: string | null
-          sexo?: string | null
-          trabalho_estudo?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -626,17 +612,10 @@ export type Database = {
           cidade?: string | null
           created_at?: string | null
           estado?: string | null
-          estado_civil?: string | null
           full_name?: string | null
-          habilidades?: string | null
           id?: string | null
-          idade?: number | null
           instagram_url?: string | null
           linkedin_url?: string | null
-          objetivos_curto_prazo?: string | null
-          objetivos_longo_prazo?: string | null
-          sexo?: string | null
-          trabalho_estudo?: string | null
         }
         Relationships: []
       }
@@ -644,6 +623,10 @@ export type Database = {
     Functions: {
       get_participant_count: { Args: never; Returns: number }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_group_representative: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       group_cargo:

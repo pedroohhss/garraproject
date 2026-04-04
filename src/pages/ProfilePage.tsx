@@ -44,16 +44,27 @@ export default function ProfilePage() {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("users_public" as any)
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle() as { data: ProfileData | null };
-      setProfile(data);
+      if (isOwnProfile) {
+        // Own profile: query users table directly (has all fields via RLS)
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, bio, avatar_url, linkedin_url, sexo, idade, estado_civil, estado, cidade, trabalho_estudo, habilidades, objetivos_curto_prazo, objetivos_longo_prazo, instagram_url, cargos_aptos, created_at")
+          .eq("id", userId)
+          .maybeSingle();
+        setProfile(data as ProfileData | null);
+      } else {
+        // Other user: query public view (limited fields)
+        const { data } = await supabase
+          .from("users_public" as any)
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle() as { data: ProfileData | null };
+        setProfile(data);
+      }
       setLoading(false);
     };
     load();
-  }, [userId]);
+  }, [userId, isOwnProfile]);
 
   if (loading) {
     return (
