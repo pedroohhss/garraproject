@@ -40,7 +40,6 @@ const TOGGLE_ITEMS: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] 
   { key: "registration_open", label: "Cadastro aberto" },
   { key: "ideas_open", label: "Cadastro de ideias" },
   { key: "voting_open", label: "Votação" },
-  { key: "groups_confirmed", label: "Grupos confirmados" },
   { key: "joining_open", label: "Entrada nos grupos" },
 ];
 
@@ -198,12 +197,6 @@ export default function AdminDashboard() {
 
           await supabase.from("users").update({ group_id: group.id }).eq("id", idea.created_by);
         }
-      }
-
-      // Set groups_confirmed = true
-      if (config) {
-        await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", config.id);
-        setConfig((prev) => prev ? { ...prev, groups_confirmed: true } : prev);
       }
 
       toast({ title: `${selected.length} grupos criados com sucesso!` });
