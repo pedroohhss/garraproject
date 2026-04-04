@@ -217,7 +217,9 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-foreground font-medium">{user.full_name}</span>
                           {user.profileIncomplete && (
-                            <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" title="Perfil incompleto" />
+                            <span title="Perfil incompleto">
+                              <AlertTriangle className="h-3.5 w-3.5 text-destructive/70" />
+                            </span>
                           )}
                         </div>
                       </div>
