@@ -589,9 +589,11 @@ export type Database = {
           created_at: string | null
           estado: string | null
           full_name: string | null
+          group_id: string | null
           id: string | null
           instagram_url: string | null
           linkedin_url: string | null
+          role: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -601,9 +603,11 @@ export type Database = {
           created_at?: string | null
           estado?: string | null
           full_name?: string | null
+          group_id?: string | null
           id?: string | null
           instagram_url?: string | null
           linkedin_url?: string | null
+          role?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -613,11 +617,21 @@ export type Database = {
           created_at?: string | null
           estado?: string | null
           full_name?: string | null
+          group_id?: string | null
           id?: string | null
           instagram_url?: string | null
           linkedin_url?: string | null
+          role?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -627,6 +641,9 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      is_ideas_open: { Args: never; Returns: boolean }
+      is_joining_open: { Args: never; Returns: boolean }
+      is_voting_open: { Args: never; Returns: boolean }
     }
     Enums: {
       group_cargo:
