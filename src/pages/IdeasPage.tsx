@@ -87,6 +87,7 @@ export default function IdeasPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [problem, setProblem] = useState("");
+  const [formErrors, setFormErrors] = useState<{ title?: string; description?: string; category?: string }>({});
 
   // Filter state
   const [searchText, setSearchText] = useState("");
@@ -214,6 +215,7 @@ export default function IdeasPage() {
   const resetForm = () => {
     setTitle(""); setDescription(""); setCategory(""); setProblem("");
     setEditingIdea(null);
+    setFormErrors({});
   };
   const openNewDialog = () => { resetForm(); setFormDialogOpen(true); };
   const openEditDialog = (idea: Idea, e: React.MouseEvent) => {
@@ -227,10 +229,15 @@ export default function IdeasPage() {
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !description.trim() || !category) {
-      toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
+    const errs: { title?: string; description?: string; category?: string } = {};
+    if (!title.trim()) errs.title = "Nome da ideia é obrigatório.";
+    if (!description.trim()) errs.description = "Descrição é obrigatória.";
+    if (!category) errs.category = "Categoria é obrigatória.";
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
       return;
     }
+    setFormErrors({});
     setSaving(true);
     try {
       if (editingIdea) {
@@ -495,29 +502,49 @@ export default function IdeasPage() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Nome da ideia *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} placeholder="Ex: App de caronas universitárias" />
+              <Label>Nome da ideia <span className="text-destructive">*</span></Label>
+              <Input
+                value={title}
+                onChange={(e) => { setTitle(e.target.value); setFormErrors((prev) => ({ ...prev, title: undefined })); }}
+                maxLength={100}
+                placeholder="Ex: App de caronas universitárias"
+                className={formErrors.title ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {formErrors.title && <p className="text-xs text-destructive">{formErrors.title}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Descrição *</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={280} placeholder="Descreva brevemente a ideia" rows={3} />
-              <p className="text-xs text-muted-foreground text-right">{description.length}/280</p>
+              <Label>Descrição <span className="text-destructive">*</span></Label>
+              <Textarea
+                value={description}
+                onChange={(e) => { setDescription(e.target.value); setFormErrors((prev) => ({ ...prev, description: undefined })); }}
+                maxLength={280}
+                placeholder="Descreva brevemente a ideia"
+                rows={3}
+                className={formErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <div className="flex items-center justify-between">
+                {formErrors.description ? <p className="text-xs text-destructive">{formErrors.description}</p> : <span />}
+                <p className="text-xs text-muted-foreground">{description.length}/280</p>
+              </div>
             </div>
             <div className="space-y-2">
-              <Label>Categoria *</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <Label>Categoria <span className="text-destructive">*</span></Label>
+              <Select value={category} onValueChange={(v) => { setCategory(v); setFormErrors((prev) => ({ ...prev, category: undefined })); }}>
+                <SelectTrigger className={formErrors.category ? "border-destructive focus-visible:ring-destructive" : ""}>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
             </div>
             <div className="space-y-2">
               <Label>Problema que resolve</Label>
               <Textarea value={problem} onChange={(e) => setProblem(e.target.value)} maxLength={500} placeholder="Opcional" rows={2} />
               <p className="text-xs text-muted-foreground text-right">{problem.length}/500</p>
             </div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">
+            <Button type="button" onClick={handleSave} disabled={saving} className="w-full">
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {editingIdea ? "Salvar Alterações" : "Cadastrar Ideia"}
             </Button>

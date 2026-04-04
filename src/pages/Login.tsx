@@ -7,20 +7,48 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+interface FieldErrors {
+  email?: string;
+  password?: string;
+}
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const navigate = useNavigate();
+
+  const validate = (): FieldErrors => {
+    const errs: FieldErrors = {};
+    if (!email.trim()) errs.email = "Email é obrigatório.";
+    if (!password) errs.password = "Senha é obrigatória.";
+    return errs;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      toast.error(error.message);
+      if (error.message.toLowerCase().includes("invalid login credentials") || error.message.toLowerCase().includes("invalid credentials")) {
+        toast.error("Email ou senha incorretos.");
+      } else if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error("Email ainda não confirmado. Verifique sua caixa de entrada.");
+      } else if (error.status === 429) {
+        toast.error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else {
+        toast.error("Erro ao fazer login. Tente novamente.");
+      }
       setLoading(false);
       return;
     }
@@ -53,31 +81,35 @@ export default function Login() {
           <p className="label-sm">Faça login para continuar</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-5" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="email" className="label-sm">Email</Label>
+            <Label htmlFor="email" className="label-sm">
+              Email <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-secondary/50 border-border"
+              onChange={(e) => { setEmail(e.target.value); setErrors((prev) => ({ ...prev, email: undefined })); }}
+              className={`bg-secondary/50 border-border ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
               placeholder="seu@email.com"
             />
+            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="label-sm">Senha</Label>
+            <Label htmlFor="password" className="label-sm">
+              Senha <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-secondary/50 border-border"
+              onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined })); }}
+              className={`bg-secondary/50 border-border ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
               placeholder="••••••••"
             />
+            {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
           </div>
 
           <Button
