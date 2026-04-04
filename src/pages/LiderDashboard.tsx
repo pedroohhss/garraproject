@@ -50,11 +50,11 @@ export default function LiderDashboard() {
 
           const [membersRes, repsRes] = await Promise.all([
             supabase
-              .from("users")
+              .from("users_public")
               .select("id, full_name, group_id")
               .in("group_id", groupIds),
             repIds.length > 0
-              ? (supabase.from("users_public" as any).select("id, full_name").in("id", repIds) as unknown as Promise<{ data: { id: string; full_name: string }[] | null }>)
+              ? supabase.from("users_public").select("id, full_name").in("id", repIds)
               : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
           ]);
 
