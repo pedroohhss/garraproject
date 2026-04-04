@@ -276,8 +276,19 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {TOGGLE_ITEMS.map((item) => (
               <div key={item.key} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
-                <span className="text-sm text-foreground">{item.label}</span>
-                <Switch checked={config[item.key] as boolean} onCheckedChange={(val) => handleToggle(item.key, val)} />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground">{item.label}</span>
+                  {item.key === "voting_open" && creatingGroups && (
+                    <span className="flex items-center gap-1 text-xs text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Criando grupos...
+                    </span>
+                  )}
+                </div>
+                <Switch
+                  checked={config[item.key] as boolean}
+                  onCheckedChange={(val) => handleToggle(item.key, val)}
+                  disabled={creatingGroups}
+                />
               </div>
             ))}
           </div>
