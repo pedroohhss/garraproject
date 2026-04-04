@@ -34,6 +34,7 @@ interface Delivery {
   content_link: string | null;
   content_file_url: string | null;
   admin_feedback: string | null;
+  admin_score: number | null;
 }
 
 interface GroupInfo {
