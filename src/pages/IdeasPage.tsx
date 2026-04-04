@@ -318,11 +318,10 @@ export default function IdeasPage() {
 
   // Phase flags
   const showStars = config?.voting_open === true;
-  const showVoteTotal = config ? (config.voting_open || !config.groups_confirmed || config.groups_confirmed) && !config.ideas_open || !config.voting_open : false;
-  // Show vote totals when voting_open=true OR when voting is closed
-  const showVoteTotals = config ? config.voting_open || (!config.voting_open) : false;
-  // Show classified badge when voting closed
-  const showClassifiedBadge = config ? !config.voting_open : false;
+  // Show vote totals only after voting started (voting_open or after voting closed with ideas_open=false)
+  const showVoteTotals = config ? !config.ideas_open && (config.voting_open || !config.voting_open) : false;
+  // Show classified badge only when voting is closed and ideas_open is false
+  const showClassifiedBadge = config ? !config.voting_open && !config.ideas_open : false;
 
   // Cargo badge colors
   const cargoColor = (cargo: string) => {
