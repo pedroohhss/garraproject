@@ -149,6 +149,10 @@ export default function AdminChecklistPage() {
           <span className="text-sm text-muted-foreground">{criteria.length} critérios · {maxPoints} pts máx</span>
         )}
 
+        <Button size="sm" variant="outline" onClick={() => navigate("/admin/checklist/acompanhamento")} className="gap-1.5">
+          <ClipboardCheck className="h-4 w-4" /> Acompanhamento
+        </Button>
+
         <Button size="sm" onClick={openCreate} className="gap-1.5">
           <Plus className="h-4 w-4" /> Novo critério
         </Button>
