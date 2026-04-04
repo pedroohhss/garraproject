@@ -21,6 +21,7 @@ interface Week { id: string; number: number; title: string; is_active: boolean }
 interface Criterion { id: string; week_id: string | null; description: string | null; points: number | null }
 
 export default function AdminChecklistPage() {
+  const navigate = useNavigate();
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState("");
   const [criteria, setCriteria] = useState<Criterion[]>([]);
