@@ -228,7 +228,7 @@ export default function DeliveryTrackingPage() {
                               {status === "entregue" && <CheckCircle2 className="h-3 w-3" />}
                               {status === "pendente" && <Clock className="h-3 w-3" />}
                               {status === "atrasado" && <AlertTriangle className="h-3 w-3" />}
-                              {status === "entregue" ? "Entregue" : status === "pendente" ? "Pendente" : "Atrasado"}
+                              {status === "entregue" ? (delivery?.admin_score != null ? `${delivery.admin_score}pts` : "Entregue") : status === "pendente" ? "Pendente" : "Atrasado"}
                             </button>
                           </td>
                         );
