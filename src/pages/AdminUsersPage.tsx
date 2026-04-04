@@ -9,8 +9,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, Search, AlertTriangle, ExternalLink, Loader2,
+  Users, Search, AlertTriangle, ExternalLink, Loader2, Trash2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface UserRow {
   id: string;
