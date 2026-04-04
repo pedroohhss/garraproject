@@ -29,7 +29,7 @@ export default function RankingPage() {
         supabase.from("groups").select("id, name"),
         supabase.from("checklist_criteria").select("id, week_id, points"),
         supabase.from("checklist_entries").select("criterion_id, group_id, completed"),
-        supabase.from("deliveries").select("group_id, submitted_at, admin_score, activity_id"),
+        supabase.from("deliveries_scores" as any).select("group_id, admin_score, activity_id"),
         supabase.from("activities").select("id, week_id"),
       ]);
 
@@ -39,21 +39,15 @@ export default function RankingPage() {
       const allGroups = groupsRes.data ?? [];
       const allCriteria = criteriaRes.data ?? [];
       const allEntries = entriesRes.data ?? [];
-      const allDeliveries = (deliveriesRes.data ?? []) as { group_id: string | null; submitted_at: string | null; admin_score: number | null; activity_id: string | null }[];
+      const allDeliveries = (deliveriesRes.data ?? []) as unknown as { group_id: string | null; admin_score: number | null; activity_id: string | null }[];
       const allActivities = activitiesRes.data ?? [];
 
       const criterionMap = new Map(allCriteria.map((c) => [c.id, c]));
       const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
       const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
 
-      // Earliest delivery per group (for tiebreak)
+      // Tiebreak: use group name alphabetically (no submitted_at in scores view)
       const earliestMap = new Map<string, string>();
-      allDeliveries.forEach((d) => {
-        if (d.group_id && d.submitted_at) {
-          const prev = earliestMap.get(d.group_id);
-          if (!prev || d.submitted_at < prev) earliestMap.set(d.group_id, d.submitted_at);
-        }
-      });
 
       const ranked: GroupRank[] = allGroups.map((g) => {
         const pointsByWeek = new Map<number, { checklist: number; delivery: number }>();
