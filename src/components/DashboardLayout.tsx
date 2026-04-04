@@ -1,6 +1,5 @@
 import { ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { User } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9,15 +8,12 @@ import {
   FileText,
   Calendar,
   Lightbulb,
-  BookOpen,
   Layers,
-  ClipboardList,
   ClipboardCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,42 +29,32 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Grupos", icon: Layers, path: "/admin/grupos" },
     { label: "Ranking", icon: FileText, path: "/admin/ranking" },
     { label: "Semanas", icon: Calendar, path: "/admin/semanas" },
-    { label: "Atividades", icon: ClipboardList, path: "/admin/atividades" },
-    { label: "Entregas", icon: Send, path: "/admin/entregas" },
-    { label: "Checklist", icon: ClipboardCheck, path: "/admin/checklist" },
+    { label: "Checklist", icon: ClipboardCheck, path: "/admin/checklist/acompanhamento" },
     { label: "Ideias", icon: Lightbulb, path: "/admin/ideias" },
-    { label: "Materiais", icon: BookOpen, path: "/admin/materiais" },
     { label: "Configurações", icon: Settings, path: "/admin/config" },
   ],
   lider: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/lider" },
     { label: "Meus Grupos", icon: Layers, path: "/lider/grupos" },
-    { label: "Atividades", icon: ClipboardList, path: "/lider/atividades" },
-    { label: "Entregas", icon: Send, path: "/lider/entregas" },
+    { label: "Semanas", icon: Calendar, path: "/lider/semanas" },
     { label: "Checklist", icon: ClipboardCheck, path: "/lider/checklist" },
     { label: "Ranking", icon: FileText, path: "/lider/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/lider/ideias" },
-    { label: "Semana Atual", icon: Calendar, path: "/lider/semana" },
-    { label: "Materiais", icon: BookOpen, path: "/lider/materiais" },
   ],
   participante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
     { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
-    { label: "Atividades", icon: ClipboardList, path: "/participante/atividades" },
+    { label: "Semanas", icon: Calendar, path: "/participante/semanas" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
-    { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },
-    { label: "Materiais", icon: BookOpen, path: "/participante/materiais" },
   ],
   representante: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/participante" },
     { label: "Meu Grupo", icon: Layers, path: "/participante/grupos" },
-    { label: "Atividades", icon: ClipboardList, path: "/participante/atividades" },
+    { label: "Semanas", icon: Calendar, path: "/participante/semanas" },
     { label: "Checklist", icon: ClipboardCheck, path: "/participante/checklist" },
     { label: "Ranking", icon: FileText, path: "/participante/ranking" },
     { label: "Ideias", icon: Lightbulb, path: "/participante/ideias" },
-    { label: "Semana Atual", icon: Calendar, path: "/participante/semana" },
-    { label: "Materiais", icon: BookOpen, path: "/participante/materiais" },
   ],
 };
 
@@ -144,7 +130,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         {/* Nav */}
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             return (
               <Link
                 key={item.path}
