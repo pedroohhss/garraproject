@@ -9,8 +9,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, Search, AlertTriangle, ExternalLink, Loader2,
+  Users, Search, AlertTriangle, ExternalLink, Loader2, Trash2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface UserRow {
   id: string;
@@ -56,6 +68,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [updatingRole, setUpdatingRole] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   const loadUsers = async () => {
@@ -125,6 +138,24 @@ export default function AdminUsersPage() {
       toast({ title: active ? "Usuário ativado" : "Usuário desativado" });
     }
     setUpdatingStatus(false);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Usuário excluído com sucesso" });
+      setSelectedUser(null);
+      loadUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const formatDate = (d: string | null) => {
@@ -361,6 +392,33 @@ export default function AdminUsersPage() {
                 >
                   <ExternalLink className="h-4 w-4" /> Ver perfil público
                 </button>
+
+                {/* Delete user */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full mt-2" disabled={deleting}>
+                      {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                      Excluir conta
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir conta de {selectedUser.full_name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação é irreversível. Todos os dados do usuário, incluindo entregas, checklist e participação em grupos serão removidos permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteUser(selectedUser.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Excluir permanentemente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </>
           )}
