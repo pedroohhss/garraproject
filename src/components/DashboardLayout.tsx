@@ -144,7 +144,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Nav */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const active = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          const isPrefixOfOther = navItems.some((other) => other.path !== item.path && other.path.startsWith(item.path + "/"));
+          const active = location.pathname === item.path || (!isPrefixOfOther && location.pathname.startsWith(item.path + "/"));
           return (
             <Link
               key={item.path}
