@@ -11,7 +11,9 @@ interface GroupRank {
   id: string;
   name: string;
   totalPoints: number;
-  pointsByWeek: Map<number, number>;
+  checklistPoints: number;
+  deliveryPoints: number;
+  pointsByWeek: Map<number, { checklist: number; delivery: number }>;
   earliestDelivery: string | null;
 }
 
@@ -22,12 +24,13 @@ export default function RankingPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [weeksRes, groupsRes, criteriaRes, entriesRes, deliveriesRes] = await Promise.all([
+      const [weeksRes, groupsRes, criteriaRes, entriesRes, deliveriesRes, activitiesRes] = await Promise.all([
         supabase.from("weeks").select("id, number, title").order("number"),
         supabase.from("groups").select("id, name"),
         supabase.from("checklist_criteria").select("id, week_id, points"),
         supabase.from("checklist_entries").select("criterion_id, group_id, completed"),
-        supabase.from("deliveries").select("group_id, submitted_at"),
+        supabase.from("deliveries").select("group_id, submitted_at, admin_score, activity_id"),
+        supabase.from("activities").select("id, week_id"),
       ]);
 
       const wks = weeksRes.data ?? [];
@@ -36,11 +39,12 @@ export default function RankingPage() {
       const allGroups = groupsRes.data ?? [];
       const allCriteria = criteriaRes.data ?? [];
       const allEntries = entriesRes.data ?? [];
-      const allDeliveries = deliveriesRes.data ?? [];
+      const allDeliveries = (deliveriesRes.data ?? []) as { group_id: string | null; submitted_at: string | null; admin_score: number | null; activity_id: string | null }[];
+      const allActivities = activitiesRes.data ?? [];
 
-      // Map criterion to its week and points
       const criterionMap = new Map(allCriteria.map((c) => [c.id, c]));
       const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
+      const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
 
       // Earliest delivery per group (for tiebreak)
       const earliestMap = new Map<string, string>();
@@ -52,23 +56,43 @@ export default function RankingPage() {
       });
 
       const ranked: GroupRank[] = allGroups.map((g) => {
-        const pointsByWeek = new Map<number, number>();
-        let total = 0;
+        const pointsByWeek = new Map<number, { checklist: number; delivery: number }>();
+        let checklistTotal = 0;
+        let deliveryTotal = 0;
+
+        // Checklist points
         allEntries.forEach((e) => {
           if (e.group_id === g.id && e.completed && e.criterion_id) {
             const crit = criterionMap.get(e.criterion_id);
             if (crit) {
               const pts = crit.points ?? 0;
-              total += pts;
+              checklistTotal += pts;
               const weekNum = weekIdToNumber.get(crit.week_id ?? "") ?? 0;
-              pointsByWeek.set(weekNum, (pointsByWeek.get(weekNum) ?? 0) + pts);
+              const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
+              existing.checklist += pts;
+              pointsByWeek.set(weekNum, existing);
             }
           }
         });
+
+        // Delivery scores
+        allDeliveries.forEach((d) => {
+          if (d.group_id === g.id && d.admin_score != null && d.admin_score > 0) {
+            deliveryTotal += d.admin_score;
+            const weekId = d.activity_id ? activityWeekMap.get(d.activity_id) : null;
+            const weekNum = weekId ? (weekIdToNumber.get(weekId) ?? 0) : 0;
+            const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
+            existing.delivery += d.admin_score;
+            pointsByWeek.set(weekNum, existing);
+          }
+        });
+
         return {
           id: g.id,
           name: g.name,
-          totalPoints: total,
+          totalPoints: checklistTotal + deliveryTotal,
+          checklistPoints: checklistTotal,
+          deliveryPoints: deliveryTotal,
           pointsByWeek,
           earliestDelivery: earliestMap.get(g.id) ?? null,
         };
@@ -76,7 +100,6 @@ export default function RankingPage() {
 
       ranked.sort((a, b) => {
         if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-        // Tiebreak: earliest delivery first
         if (!a.earliestDelivery && !b.earliestDelivery) return 0;
         if (!a.earliestDelivery) return 1;
         if (!b.earliestDelivery) return -1;
@@ -136,16 +159,23 @@ export default function RankingPage() {
 
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-medium text-foreground">{group.name}</h3>
-                  <div className="flex gap-2 mt-1 flex-wrap">
+                  <div className="flex gap-3 mt-1 flex-wrap">
                     {weeks.map((w) => {
-                      const pts = group.pointsByWeek.get(w.number) ?? 0;
-                      return pts > 0 ? (
+                      const pts = group.pointsByWeek.get(w.number);
+                      const total = (pts?.checklist ?? 0) + (pts?.delivery ?? 0);
+                      return total > 0 ? (
                         <span key={w.number} className="text-[10px] text-muted-foreground">
-                          S{w.number}: {pts}pts
+                          S{w.number}: {total}pts
                         </span>
                       ) : null;
                     })}
                   </div>
+                  {(group.checklistPoints > 0 || group.deliveryPoints > 0) && (
+                    <div className="flex gap-3 mt-0.5">
+                      {group.checklistPoints > 0 && <span className="text-[10px] text-muted-foreground">Checklist: {group.checklistPoints}</span>}
+                      {group.deliveryPoints > 0 && <span className="text-[10px] text-primary">Notas: {group.deliveryPoints}</span>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-right shrink-0">
