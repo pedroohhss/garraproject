@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
-  AlertTriangle, CheckCircle2, Clock, ExternalLink, FileText, Loader2, MessageSquare, Send,
+  AlertTriangle, CheckCircle2, Clock, ExternalLink, FileText, Loader2, MessageSquare, Send, Trophy,
 } from "lucide-react";
 
 interface Activity {
