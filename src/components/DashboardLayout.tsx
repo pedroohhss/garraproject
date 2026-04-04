@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
