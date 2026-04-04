@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   Calendar as CalendarIcon, CheckCircle2, ChevronRight, Loader2,
-  Pencil, Play, Trophy,
+  Pencil, Play, Trophy, BookOpen, ClipboardList, PackageCheck, FileUp,
 } from "lucide-react";
 
 interface Week {
@@ -239,30 +239,66 @@ export default function WeeksListPage() {
             const status = getWeekStatus(week, activeNumber);
             const badge = STATUS_BADGE[status];
 
+            const featurePills = [
+              { icon: BookOpen, label: "Materiais" },
+              { icon: FileUp, label: "Entregas" },
+              { icon: ClipboardList, label: "Checklist" },
+              { icon: PackageCheck, label: "Atividades" },
+            ];
+
             return (
               <div
                 key={week.id}
                 onClick={() => navigate(`${rolePrefix}/semanas/${week.id}`)}
                 className={cn(
-                  "glass-card p-6 space-y-4 transition-all cursor-pointer hover:bg-secondary/30",
+                  "glass-card p-6 flex flex-col gap-4 transition-all cursor-pointer group",
+                  "hover:bg-secondary/20 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5",
                   status === "ativa" && "ring-2 ring-primary/50 bg-primary/5",
                   status === "encerrada" && "opacity-60"
                 )}
               >
-                <div className="flex items-start justify-between">
-                  <div>
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Semana {week.number}</p>
-                    <h3 className="text-foreground font-semibold mt-1">{week.title}</h3>
+                    <h3 className="text-foreground font-semibold mt-1 leading-snug">{week.title}</h3>
+                    {week.theme && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{week.theme}</p>
+                    )}
                   </div>
-                  <Badge className={cn("text-xs", badge.className)}>{badge.label}</Badge>
+                  <Badge className={cn("text-xs shrink-0", badge.className)}>{badge.label}</Badge>
                 </div>
-                {week.theme && <p className="text-sm text-muted-foreground">Tema: {week.theme}</p>}
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Início: {formatDate(week.starts_at)}</span>
-                  <span>Fim: {formatDate(week.ends_at)}</span>
+
+                {/* Feature pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {featurePills.map(({ icon: Icon, label }) => (
+                    <span
+                      key={label}
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/40 border border-border px-2 py-0.5 rounded-full"
+                    >
+                      <Icon className="h-3 w-3" />
+                      {label}
+                    </span>
+                  ))}
                 </div>
+
+                {/* Footer: dates + CTA */}
+                <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/50">
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span>{formatDate(week.starts_at)}{week.ends_at ? ` → ${formatDate(week.ends_at)}` : ""}</span>
+                  </div>
+                  <span className={cn(
+                    "flex items-center gap-1 text-xs font-medium transition-colors",
+                    status === "ativa" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  )}>
+                    {status === "ativa" ? "Acessar" : "Ver conteúdo"}
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+
+                {/* Admin controls */}
                 {isAdmin && (
-                  <div className="flex gap-2 pt-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(week)} className="gap-1 text-xs">
                       <Pencil className="h-3 w-3" /> Editar
                     </Button>
