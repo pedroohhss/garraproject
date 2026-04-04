@@ -4,7 +4,6 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Settings,
   FileText,
   Calendar,
   Lightbulb,
@@ -15,6 +14,7 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import garraLogo from "@/assets/logo-garra.png";
 
 interface NavItem {
   label: string;
@@ -31,7 +31,6 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Semanas", icon: Calendar, path: "/admin/semanas" },
     { label: "Checklist", icon: ClipboardCheck, path: "/admin/checklist/acompanhamento" },
     { label: "Ideias", icon: Lightbulb, path: "/admin/ideias" },
-    { label: "Configurações", icon: Settings, path: "/admin/config" },
   ],
   lider: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/lider" },
@@ -117,9 +116,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       >
         {/* Logo */}
         <div className="flex items-center gap-2 px-4 h-16 border-b border-border shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-            G
-          </div>
+          <img src={garraLogo} alt="Garra Projects" className="w-8 h-8 shrink-0 object-contain" />
           {!collapsed && (
             <span className="font-semibold text-foreground text-sm whitespace-nowrap">
               Garra Projects
@@ -161,10 +158,16 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         <div className="border-t border-border px-3 py-3 flex items-center gap-3">
           <Link
             to={profile?.id ? `/perfil/${profile.id}` : "#"}
-            className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold shrink-0 hover:ring-1 hover:ring-primary/40 transition-all"
+            className="w-8 h-8 rounded-full shrink-0 hover:ring-1 hover:ring-primary/40 transition-all overflow-hidden"
             title="Ver perfil"
           >
-            {initials}
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
+                {initials}
+              </div>
+            )}
           </Link>
           {!collapsed && (
             <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">

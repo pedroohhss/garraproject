@@ -9,6 +9,7 @@ interface UserProfile {
   role: string | null;
   group_id: string | null;
   is_active: boolean | null;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
