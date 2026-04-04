@@ -295,21 +295,25 @@ export default function DeliveryTrackingPage() {
                   )}
                 </div>
 
-                {/* Feedback */}
-                <div className="border-t border-border pt-4 space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Feedback do Admin</p>
+                {/* Avaliação */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Trophy className="h-3.5 w-3.5 text-primary" />
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Nota (0–100)</p>
+                    </div>
+                    <Input type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} placeholder="Ex: 85" className="w-32" />
                   </div>
-                  <Textarea
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    placeholder="Escreva seu feedback..."
-                    rows={4}
-                  />
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Feedback do Admin</p>
+                    </div>
+                    <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Escreva seu feedback..." rows={4} />
+                  </div>
                   <Button size="sm" onClick={handleSaveFeedback} disabled={savingFeedback} className="gap-1">
                     {savingFeedback && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    <Send className="h-3.5 w-3.5" /> Salvar feedback
+                    <Send className="h-3.5 w-3.5" /> Salvar avaliação
                   </Button>
                 </div>
               </>
