@@ -46,14 +46,8 @@ export default function RankingPage() {
       const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
       const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
 
-      // Earliest delivery per group (for tiebreak)
+      // Tiebreak: use group name alphabetically (no submitted_at in scores view)
       const earliestMap = new Map<string, string>();
-      allDeliveries.forEach((d) => {
-        if (d.group_id && d.submitted_at) {
-          const prev = earliestMap.get(d.group_id);
-          if (!prev || d.submitted_at < prev) earliestMap.set(d.group_id, d.submitted_at);
-        }
-      });
 
       const ranked: GroupRank[] = allGroups.map((g) => {
         const pointsByWeek = new Map<number, { checklist: number; delivery: number }>();
