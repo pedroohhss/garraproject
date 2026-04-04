@@ -115,20 +115,25 @@ export default function DeliveryTrackingPage() {
     setSelectedGroup(group);
     setSelectedDelivery(del ?? null);
     setFeedback(del?.admin_feedback ?? "");
+    setScore(del?.admin_score != null ? String(del.admin_score) : "");
   };
 
   const handleSaveFeedback = async () => {
     if (!selectedDelivery) return;
+    const parsedScore = score.trim() === "" ? null : parseInt(score, 10);
+    if (parsedScore !== null && (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100)) {
+      toast({ title: "Nota deve ser entre 0 e 100", variant: "destructive" }); return;
+    }
     setSavingFeedback(true);
     const { error } = await supabase
       .from("deliveries")
-      .update({ admin_feedback: feedback.trim() || null })
+      .update({ admin_feedback: feedback.trim() || null, admin_score: parsedScore })
       .eq("id", selectedDelivery.id);
     if (error) {
-      toast({ title: "Erro ao salvar feedback", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao salvar avaliação", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Feedback salvo" });
-      setSelectedDelivery((prev) => prev ? { ...prev, admin_feedback: feedback.trim() || null } : prev);
+      toast({ title: "Avaliação salva" });
+      setSelectedDelivery((prev) => prev ? { ...prev, admin_feedback: feedback.trim() || null, admin_score: parsedScore } : prev);
       await loadData();
     }
     setSavingFeedback(false);
