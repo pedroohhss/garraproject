@@ -110,7 +110,7 @@ export default function AdminWeeksPage() {
     const now = new Date().toISOString().split("T")[0];
     const { error } = await supabase
       .from("weeks")
-      .update({ is_active: true, starts_at: activateTarget.starts_at ?? now })
+      .update({ is_active: true, starts_at: activateTarget.starts_at ?? now, ends_at: null })
       .eq("id", activateTarget.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -286,17 +286,15 @@ export default function AdminWeeksPage() {
                   <span>Fim: {formatDate(week.ends_at)}</span>
                 </div>
 
-                <div className="flex gap-2 pt-1">
-                  {!isEncerrada && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openEdit(week)}
-                      className="gap-1 text-xs"
-                    >
-                      <Pencil className="h-3 w-3" /> Editar
-                    </Button>
-                  )}
+                <div className="flex gap-2 pt-1 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openEdit(week)}
+                    className="gap-1 text-xs"
+                  >
+                    <Pencil className="h-3 w-3" /> Editar
+                  </Button>
                   {status === "futura" && (
                     <Button
                       size="sm"
@@ -305,6 +303,16 @@ export default function AdminWeeksPage() {
                       className="gap-1 text-xs"
                     >
                       <Play className="h-3 w-3" /> Ativar
+                    </Button>
+                  )}
+                  {status === "encerrada" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setActivateTarget(week)}
+                      className="gap-1 text-xs"
+                    >
+                      <Play className="h-3 w-3" /> Reativar
                     </Button>
                   )}
                   {status === "ativa" && (
