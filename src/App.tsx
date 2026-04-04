@@ -18,6 +18,7 @@ import ActivitiesPage from "./pages/ActivitiesPage";
 import DeliveryTrackingPage from "./pages/DeliveryTrackingPage";
 import ChecklistPage from "./pages/ChecklistPage";
 import ChecklistTrackingPage from "./pages/ChecklistTrackingPage";
+import AdminChecklistPage from "./pages/AdminChecklistPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
@@ -93,7 +94,8 @@ const App = () => (
             <Route path="/admin/semanas" element={<ProtectedRoute allowedRoles={["admin"]}><AdminWeeksPage /></ProtectedRoute>} />
             <Route path="/admin/atividades" element={<ProtectedRoute allowedRoles={["admin"]}><AdminActivitiesPage /></ProtectedRoute>} />
             <Route path="/admin/entregas" element={<ProtectedRoute allowedRoles={["admin"]}><DeliveryTrackingPage /></ProtectedRoute>} />
-            <Route path="/admin/checklist" element={<ProtectedRoute allowedRoles={["admin"]}><ChecklistTrackingPage /></ProtectedRoute>} />
+            <Route path="/admin/checklist" element={<ProtectedRoute allowedRoles={["admin"]}><AdminChecklistPage /></ProtectedRoute>} />
+            <Route path="/admin/checklist/acompanhamento" element={<ProtectedRoute allowedRoles={["admin"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
             {/* Lider routes */}
             <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
