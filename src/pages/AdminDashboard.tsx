@@ -136,6 +136,84 @@ export default function AdminDashboard() {
     load();
   }, []);
 
+  const [creatingGroups, setCreatingGroups] = useState(false);
+
+  const createGroupsFromTopIdeas = useCallback(async () => {
+    setCreatingGroups(true);
+    try {
+      // Fetch ideas + votes
+      const [ideasRes, votesRes] = await Promise.all([
+        supabase.from("ideas").select("id, title, created_by"),
+        supabase.from("votes").select("idea_id, quantity"),
+      ]);
+      const allIdeas = ideasRes.data ?? [];
+      const allVotes = votesRes.data ?? [];
+
+      // Sum votes per idea
+      const voteSumMap = new Map<string, number>();
+      allVotes.forEach((v) => {
+        if (v.idea_id) {
+          voteSumMap.set(v.idea_id, (voteSumMap.get(v.idea_id) ?? 0) + (v.quantity ?? 1));
+        }
+      });
+
+      const ranked = allIdeas
+        .map((i) => ({ ...i, totalVotes: voteSumMap.get(i.id) ?? 0 }))
+        .sort((a, b) => b.totalVotes - a.totalVotes);
+
+      if (ranked.length === 0) {
+        toast({ title: "Nenhuma ideia para formar grupos", variant: "destructive" });
+        return;
+      }
+
+      // Determine top 15, handling ties
+      const MAX = 15;
+      let selected = ranked.slice(0, MAX);
+      const cutoffScore = selected.length === MAX ? selected[MAX - 1].totalVotes : -1;
+      const tiedBeyond = ranked.slice(MAX).filter((i) => i.totalVotes === cutoffScore && cutoffScore > 0);
+
+      if (tiedBeyond.length > 0) {
+        // Include all tied ideas
+        selected = [...selected, ...tiedBeyond];
+        toast({
+          title: "⚠️ Empate detectado",
+          description: `Há ideias empatadas com ${cutoffScore} pts na posição de corte. ${selected.length} grupos foram criados. Resolva manualmente se necessário.`,
+        });
+      }
+
+      // Create groups
+      for (const idea of selected) {
+        const { data: group, error: groupErr } = await supabase
+          .from("groups")
+          .insert({ name: idea.title, idea_id: idea.id, leader_id: idea.created_by })
+          .select("id")
+          .single();
+        if (groupErr) throw groupErr;
+
+        if (idea.created_by) {
+          const { error: memberErr } = await supabase
+            .from("group_members")
+            .insert({ group_id: group.id, user_id: idea.created_by, cargo: "fundador" as any });
+          if (memberErr) throw memberErr;
+
+          await supabase.from("users").update({ group_id: group.id }).eq("id", idea.created_by);
+        }
+      }
+
+      // Set groups_confirmed = true
+      if (config) {
+        await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", config.id);
+        setConfig((prev) => prev ? { ...prev, groups_confirmed: true } : prev);
+      }
+
+      toast({ title: `${selected.length} grupos criados com sucesso!` });
+    } catch (err: any) {
+      toast({ title: "Erro ao criar grupos", description: err.message, variant: "destructive" });
+    } finally {
+      setCreatingGroups(false);
+    }
+  }, [config]);
+
   const handleToggle = useCallback(
     async (key: keyof Omit<ChallengeConfig, "id">, value: boolean) => {
       if (!config) return;
@@ -147,9 +225,15 @@ export default function AdminDashboard() {
       if (error) {
         setConfig((prev) => (prev ? { ...prev, [key]: !value } : prev));
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      // Auto-create groups when voting_open toggled OFF
+      if (key === "voting_open" && value === false && !config.groups_confirmed) {
+        await createGroupsFromTopIdeas();
       }
     },
-    [config]
+    [config, createGroupsFromTopIdeas]
   );
 
   const cards = [
