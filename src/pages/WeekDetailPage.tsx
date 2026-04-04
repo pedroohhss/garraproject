@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle, ArrowLeft, BookOpen, CalendarIcon, CheckCircle2, ClipboardCheck,
   ClipboardList, Clock, ExternalLink, FileText, FileUp, Link2, Loader2,
-  MessageSquare, Pencil, Plus, Send, Trash2, Type, Upload,
+  MessageSquare, Pencil, Plus, Send, Trash2, Trophy, Type, Upload,
 } from "lucide-react";
 
 // ─── Types ───
