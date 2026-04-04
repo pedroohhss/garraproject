@@ -16,6 +16,8 @@ import AdminWeeksPage from "./pages/AdminWeeksPage";
 import AdminActivitiesPage from "./pages/AdminActivitiesPage";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import DeliveryTrackingPage from "./pages/DeliveryTrackingPage";
+import ChecklistPage from "./pages/ChecklistPage";
+import ChecklistTrackingPage from "./pages/ChecklistTrackingPage";
 import IdeasPage from "./pages/IdeasPage";
 import RankingPage from "./pages/RankingPage";
 import GroupsPage from "./pages/GroupsPage";
@@ -91,6 +93,7 @@ const App = () => (
             <Route path="/admin/semanas" element={<ProtectedRoute allowedRoles={["admin"]}><AdminWeeksPage /></ProtectedRoute>} />
             <Route path="/admin/atividades" element={<ProtectedRoute allowedRoles={["admin"]}><AdminActivitiesPage /></ProtectedRoute>} />
             <Route path="/admin/entregas" element={<ProtectedRoute allowedRoles={["admin"]}><DeliveryTrackingPage /></ProtectedRoute>} />
+            <Route path="/admin/checklist" element={<ProtectedRoute allowedRoles={["admin"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
             {/* Lider routes */}
             <Route path="/lider" element={<ProtectedRoute allowedRoles={["lider"]}><LiderDashboard /></ProtectedRoute>} />
@@ -99,6 +102,7 @@ const App = () => (
             <Route path="/lider/grupos" element={<ProtectedRoute allowedRoles={["lider"]}><GroupsPage /></ProtectedRoute>} />
             <Route path="/lider/atividades" element={<ProtectedRoute allowedRoles={["lider"]}><ActivitiesPage /></ProtectedRoute>} />
             <Route path="/lider/entregas" element={<ProtectedRoute allowedRoles={["lider"]}><DeliveryTrackingPage /></ProtectedRoute>} />
+            <Route path="/lider/checklist" element={<ProtectedRoute allowedRoles={["lider"]}><ChecklistTrackingPage /></ProtectedRoute>} />
 
             {/* Participante / Representante routes */}
             <Route path="/participante" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ParticipanteDashboard /></ProtectedRoute>} />
@@ -106,6 +110,7 @@ const App = () => (
             <Route path="/participante/ranking" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><RankingPage /></ProtectedRoute>} />
             <Route path="/participante/grupos" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><GroupsPage /></ProtectedRoute>} />
             <Route path="/participante/atividades" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ActivitiesPage /></ProtectedRoute>} />
+            <Route path="/participante/checklist" element={<ProtectedRoute allowedRoles={["participante", "representante"]}><ChecklistPage /></ProtectedRoute>} />
 
             {/* Profile routes */}
             <Route path="/perfil/editar" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
