@@ -76,6 +76,7 @@ export default function DeliveryTrackingPage() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState("");
   const [savingFeedback, setSavingFeedback] = useState(false);
 
   const loadWeeks = useCallback(async () => {
