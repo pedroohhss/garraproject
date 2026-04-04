@@ -12,6 +12,7 @@ import {
   BookOpen,
   Layers,
   ClipboardList,
+  ClipboardCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
