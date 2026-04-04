@@ -334,7 +334,7 @@ export default function GroupsPage() {
                       {group.members.length}/{MAX_PER_GROUP}
                     </Badge>
                     {/* Admin: remove button (only before confirmation) */}
-                    {isAdmin && !config?.groups_confirmed && (
+                    {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"
