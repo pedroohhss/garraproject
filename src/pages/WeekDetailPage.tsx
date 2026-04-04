@@ -26,13 +26,13 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle, ArrowLeft, BookOpen, CalendarIcon, CheckCircle2, ClipboardCheck,
   ClipboardList, Clock, ExternalLink, FileText, FileUp, Link2, Loader2,
-  MessageSquare, Pencil, Plus, Send, Trash2, Type, Upload,
+  MessageSquare, Pencil, Plus, Send, Trash2, Trophy, Type, Upload,
 } from "lucide-react";
 
 // ─── Types ───
 interface Week { id: string; number: number; title: string; theme: string | null; starts_at: string | null; ends_at: string | null; is_active: boolean }
 interface Activity { id: string; title: string | null; description: string | null; week_id: string | null; deadline: string | null; delivery_type: string | null; is_required: boolean | null }
-interface Delivery { id: string; activity_id: string | null; group_id: string | null; submitted_by: string | null; submitted_at: string | null; content_text: string | null; content_link: string | null; content_file_url: string | null; admin_feedback: string | null }
+interface Delivery { id: string; activity_id: string | null; group_id: string | null; submitted_by: string | null; submitted_at: string | null; content_text: string | null; content_link: string | null; content_file_url: string | null; admin_feedback: string | null; admin_score: number | null }
 interface Criterion { id: string; week_id: string | null; description: string | null; points: number | null }
 interface ChecklistEntry { id: string; criterion_id: string | null; group_id: string | null; completed: boolean | null; note: string | null; submitted_by: string | null; submitted_at: string | null }
 interface Material { id: string; week_id: string | null; title: string | null; description: string | null; type: string | null; url: string | null; is_required: boolean | null }
@@ -817,6 +817,7 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState("");
   const [savingFeedback, setSavingFeedback] = useState(false);
 
   const getDelivery = (aId: string, gId: string) => deliveries.find((d) => d.activity_id === aId && d.group_id === gId);
@@ -828,14 +829,18 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
 
   const openDetail = (a: Activity, g: GroupInfo) => {
     const del = getDelivery(a.id, g.id);
-    setSelectedActivity(a); setSelectedGroup(g); setSelectedDelivery(del ?? null); setFeedback(del?.admin_feedback ?? "");
+    setSelectedActivity(a); setSelectedGroup(g); setSelectedDelivery(del ?? null); setFeedback(del?.admin_feedback ?? ""); setScore(del?.admin_score != null ? String(del.admin_score) : "");
   };
 
   const handleSaveFeedback = async () => {
     if (!selectedDelivery) return;
+    const parsedScore = score.trim() === "" ? null : parseInt(score, 10);
+    if (parsedScore !== null && (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100)) {
+      toast({ title: "Nota deve ser entre 0 e 100", variant: "destructive" }); return;
+    }
     setSavingFeedback(true);
-    await supabase.from("deliveries").update({ admin_feedback: feedback.trim() || null }).eq("id", selectedDelivery.id);
-    toast({ title: "Feedback salvo" }); setSavingFeedback(false); await onReload();
+    await supabase.from("deliveries").update({ admin_feedback: feedback.trim() || null, admin_score: parsedScore }).eq("id", selectedDelivery.id);
+    toast({ title: "Avaliação salva" }); setSavingFeedback(false); await onReload();
   };
 
   const hasLate = (gId: string) => activities.some((a) => getCellStatus(a, getDelivery(a.id, gId)) === "atrasado");
@@ -887,7 +892,7 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
                             {status === "entregue" && <CheckCircle2 className="h-3 w-3" />}
                             {status === "pendente" && <Clock className="h-3 w-3" />}
                             {status === "atrasado" && <AlertTriangle className="h-3 w-3" />}
-                            {status === "entregue" ? "Entregue" : status === "pendente" ? "Pendente" : "Atrasado"}
+                            {status === "entregue" ? (del?.admin_score != null ? `${del.admin_score}pts` : "Entregue") : status === "pendente" ? "Pendente" : "Atrasado"}
                           </button>
                         </td>
                       );
@@ -919,11 +924,17 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
                   {selectedDelivery.content_file_url && <a href={selectedDelivery.content_file_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> Ver arquivo</a>}
                 </div>
                 {isAdmin && (
-                  <div className="border-t border-border pt-4 space-y-2">
-                    <div className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-muted-foreground" /><p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Feedback</p></div>
-                    <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Escreva seu feedback..." rows={4} />
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5"><Trophy className="h-3.5 w-3.5 text-primary" /><p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Nota (0–100)</p></div>
+                      <Input type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} placeholder="Ex: 85" className="w-32" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5"><MessageSquare className="h-3.5 w-3.5 text-muted-foreground" /><p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Feedback</p></div>
+                      <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Escreva seu feedback..." rows={4} />
+                    </div>
                     <Button size="sm" onClick={handleSaveFeedback} disabled={savingFeedback} className="gap-1">
-                      {savingFeedback && <Loader2 className="h-3.5 w-3.5 animate-spin" />}<Send className="h-3.5 w-3.5" /> Salvar feedback
+                      {savingFeedback && <Loader2 className="h-3.5 w-3.5 animate-spin" />}<Send className="h-3.5 w-3.5" /> Salvar avaliação
                     </Button>
                   </div>
                 )}

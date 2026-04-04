@@ -183,6 +183,7 @@ export type Database = {
         Row: {
           activity_id: string | null
           admin_feedback: string | null
+          admin_score: number | null
           content_file_url: string | null
           content_link: string | null
           content_text: string | null
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           activity_id?: string | null
           admin_feedback?: string | null
+          admin_score?: number | null
           content_file_url?: string | null
           content_link?: string | null
           content_text?: string | null
@@ -205,6 +207,7 @@ export type Database = {
         Update: {
           activity_id?: string | null
           admin_feedback?: string | null
+          admin_score?: number | null
           content_file_url?: string | null
           content_link?: string | null
           content_text?: string | null
