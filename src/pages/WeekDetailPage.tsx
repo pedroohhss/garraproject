@@ -892,7 +892,7 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
                             {status === "entregue" && <CheckCircle2 className="h-3 w-3" />}
                             {status === "pendente" && <Clock className="h-3 w-3" />}
                             {status === "atrasado" && <AlertTriangle className="h-3 w-3" />}
-                            {status === "entregue" ? "Entregue" : status === "pendente" ? "Pendente" : "Atrasado"}
+                            {status === "entregue" ? (del?.admin_score != null ? `${del.admin_score}pts` : "Entregue") : status === "pendente" ? "Pendente" : "Atrasado"}
                           </button>
                         </td>
                       );
