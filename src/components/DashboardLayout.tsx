@@ -4,7 +4,6 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Settings,
   FileText,
   Calendar,
   Lightbulb,
@@ -15,6 +14,7 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import garraLogo from "@/assets/logo-garra.png";
 
 interface NavItem {
   label: string;
