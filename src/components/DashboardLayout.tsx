@@ -276,7 +276,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Sidebar — mobile: overlay; desktop: fixed column */}
       {isMobile ? (
         <aside
-          className="fixed top-0 left-0 h-screen z-50 flex flex-col transition-transform duration-300"
+          className="fixed top-0 left-0 h-[100dvh] z-50 flex flex-col transition-transform duration-300"
           style={{
             width: 260,
             transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
