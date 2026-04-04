@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
