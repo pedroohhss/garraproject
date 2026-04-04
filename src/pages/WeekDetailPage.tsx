@@ -32,7 +32,7 @@ import {
 // ─── Types ───
 interface Week { id: string; number: number; title: string; theme: string | null; starts_at: string | null; ends_at: string | null; is_active: boolean }
 interface Activity { id: string; title: string | null; description: string | null; week_id: string | null; deadline: string | null; delivery_type: string | null; is_required: boolean | null }
-interface Delivery { id: string; activity_id: string | null; group_id: string | null; submitted_by: string | null; submitted_at: string | null; content_text: string | null; content_link: string | null; content_file_url: string | null; admin_feedback: string | null }
+interface Delivery { id: string; activity_id: string | null; group_id: string | null; submitted_by: string | null; submitted_at: string | null; content_text: string | null; content_link: string | null; content_file_url: string | null; admin_feedback: string | null; admin_score: number | null }
 interface Criterion { id: string; week_id: string | null; description: string | null; points: number | null }
 interface ChecklistEntry { id: string; criterion_id: string | null; group_id: string | null; completed: boolean | null; note: string | null; submitted_by: string | null; submitted_at: string | null }
 interface Material { id: string; week_id: string | null; title: string | null; description: string | null; type: string | null; url: string | null; is_required: boolean | null }
