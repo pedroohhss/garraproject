@@ -229,8 +229,12 @@ export default function AdminDashboard() {
       }
 
       // Auto-create groups when voting_open toggled OFF
-      if (key === "voting_open" && value === false && !config.groups_confirmed) {
-        await createGroupsFromTopIdeas();
+      if (key === "voting_open" && value === false) {
+        // Check if groups already exist before creating
+        const { count } = await supabase.from("groups").select("id", { count: "exact", head: true });
+        if ((count ?? 0) === 0) {
+          await createGroupsFromTopIdeas();
+        }
       }
     },
     [config, createGroupsFromTopIdeas]
