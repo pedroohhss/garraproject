@@ -56,6 +56,7 @@ export default function EditProfilePage() {
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ full_name?: string }>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -134,9 +135,10 @@ export default function EditProfilePage() {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) {
-      toast({ title: t("editProfile.errorNameRequired"), variant: "destructive" });
+      setFormErrors({ full_name: t("editProfile.errorNameRequired") });
       return;
     }
+    setFormErrors({});
     setSaving(true);
     try {
       let avatarUrl = form.avatar_url.trim() || null;
@@ -202,8 +204,16 @@ export default function EditProfilePage() {
           <p className="section-label">{t("editProfile.personalInfo")}</p>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("editProfile.fullName")}</Label>
-              <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} maxLength={100} />
+              <Label className="text-xs">
+                {t("editProfile.fullName")} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                value={form.full_name}
+                onChange={(e) => { set("full_name", e.target.value); setFormErrors((p) => ({ ...p, full_name: undefined })); }}
+                maxLength={100}
+                className={formErrors.full_name ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {formErrors.full_name && <p className="text-xs text-destructive">{formErrors.full_name}</p>}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">{t("editProfile.bio")}</Label>
