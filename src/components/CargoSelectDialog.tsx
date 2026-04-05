@@ -52,7 +52,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setSelected(null); } onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("cargo.dialogTitle", { groupName })}</DialogTitle>
+          <DialogTitle>{t("groups.cargo.dialogTitle", { groupName })}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 pt-2">
           {CARGOS.map((cargo) => {
@@ -93,7 +93,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
         <DialogFooter>
           <Button onClick={handleConfirm} disabled={!selected || saving} className="w-full">
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {t("cargo.confirmEntry")}
+            {t("groups.cargo.confirmEntry")}
           </Button>
         </DialogFooter>
       </DialogContent>

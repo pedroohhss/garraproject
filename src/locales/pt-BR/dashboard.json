@@ -1,0 +1,49 @@
+{
+  "participante": {
+    "titleRepresentante": "Painel do Representante",
+    "titleParticipante": "Painel do Participante",
+    "currentWeek": "Semana Atual",
+    "myGroup": "Meu Grupo",
+    "pendingDeliveries": "Entregas Pendentes",
+    "notStarted": "Não iniciado",
+    "noGroup": "Sem grupo",
+    "weekTheme": "Tema da Semana",
+    "challengeNotStarted": "O desafio ainda não começou."
+  },
+  "lider": {
+    "title": "Painel do Líder",
+    "myGroups": "Meus Grupos",
+    "currentWeek": "Semana Atual",
+    "notStarted": "Não iniciado",
+    "groupsUnderLeadership": "Grupos sob sua liderança",
+    "noGroupsLinked": "Nenhum grupo vinculado à sua liderança.",
+    "name": "Nome",
+    "members": "Membros",
+    "representative": "Representante"
+  },
+  "admin": {
+    "title": "Painel Admin",
+    "participants": "Participantes",
+    "groups": "Grupos",
+    "activeWeek": "Semana Ativa",
+    "remainingSlots": "Vagas Restantes",
+    "challengeControl": "Controle do Desafio",
+    "openRegistration": "Cadastro aberto",
+    "ideaRegistration": "Cadastro de ideias",
+    "voting": "Votação",
+    "groupEntry": "Entrada nos grupos",
+    "creatingGroups": "Criando grupos...",
+    "noIdeasForGroups": "Nenhuma ideia para formar grupos",
+    "tieDetected": "⚠️ Empate detectado",
+    "tieDescription": "Há ideias empatadas com {{cutoffScore}} pts na posição de corte. {{selected}} grupos foram criados. Resolva manualmente se necessário.",
+    "groupsCreated": "{{count}} grupos criados com sucesso!",
+    "errorCreatingGroups": "Erro ao criar grupos",
+    "errorUpdating": "Erro ao atualizar",
+    "allGroups": "Todos os Grupos",
+    "noGroupsYet": "Nenhum grupo cadastrado ainda.",
+    "members": "Membros",
+    "status": "Status",
+    "complete": "Completo",
+    "missing": "Falta: {{roles}}"
+  }
+}

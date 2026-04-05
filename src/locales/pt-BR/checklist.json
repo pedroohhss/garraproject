@@ -1,0 +1,26 @@
+{
+  "title": "Checklist da Semana",
+  "noActiveWeek": "Nenhuma semana ativa no momento.",
+  "noCriteria": "Nenhum critério definido para esta semana.",
+  "done": "Cumprido",
+  "notDone": "Não cumprido",
+  "notePlaceholder": "Observação (opcional)",
+  "toastSuccess": "Checklist enviado! {{points}}/{{max}} pontos",
+  "toastError": "Erro ao enviar",
+  "submittedMessage": "Checklist enviado. Somente o admin pode reabrir.",
+  "submitButton": "Submeter checklist ({{points}}/{{max}} pts)",
+  "tracking": {
+    "title": "Acompanhamento de Checklist",
+    "selectWeek": "Selecionar semana",
+    "weekOption": "Semana {{number}} — {{title}} (Ativa)",
+    "weekOptionInactive": "Semana {{number}} — {{title}}",
+    "criteriaCount": "{{count}} critérios · {{max}} pts máx",
+    "noCriteria": "Nenhum critério definido para esta semana.",
+    "noGroups": "Nenhum grupo cadastrado.",
+    "pending": "Pendente",
+    "filled": "Preenchido",
+    "sheetTitle": "Checklist — {{title}}",
+    "submittedAt": "Enviado em {{date}}",
+    "total": "Total"
+  }
+}

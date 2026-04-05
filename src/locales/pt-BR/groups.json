@@ -1,0 +1,63 @@
+{
+  "title": "Grupos",
+  "count_one": "{{count}} grupo",
+  "count_other": "{{count}} grupos",
+  "limit": " · Limite: {{max}}",
+  "addGroup": "Adicionar grupo",
+  "confirmGroups": "Confirmar grupos",
+  "confirmed": "Confirmados",
+  "reviewTitle": "Revise os grupos antes de confirmar",
+  "reviewDescription": "Você pode remover grupos indesejados e adicionar outros a partir de ideias não selecionadas. Após confirmar, use o toggle \"Entrada nos grupos\" no painel admin para liberar a entrada dos participantes.",
+  "noGroupsYet": "Nenhum grupo formado ainda.",
+  "groupsAutoCreated": "Os grupos serão criados automaticamente quando a votação for encerrada.",
+  "idea": "Ideia: {{title}}",
+  "vacant": "Vago",
+  "myGroup": "Meu grupo",
+  "join": "Entrar",
+  "missing": "Falta: {{roles}}",
+  "originalIdea": "Ideia original",
+  "membersCount": "Membros ({{current}}/{{max}})",
+  "noMembers": "Nenhum membro ainda.",
+  "requiredRolesVacant": "Cargos obrigatórios vagos:",
+  "removeTitle": "Remover grupo?",
+  "removeDescription": "O grupo \"{{name}}\" será removido e seus membros desvinculados. Essa ação não pode ser desfeita.",
+  "addGroupTitle": "Adicionar grupo",
+  "addGroupDescription": "Selecione uma ideia para criar um novo grupo ({{current}}/{{max}}).",
+  "allIdeasHaveGroups": "Todas as ideias já possuem grupo.",
+  "confirmTitle": "Confirmar {{count}} grupos?",
+  "confirmDescription": "Após a confirmação, os participantes poderão entrar nos grupos (quando \"Entrada nos grupos\" estiver ativa). Você poderá continuar gerenciando os grupos depois.",
+  "errorAlreadyInGroup": "Você já pertence a um grupo",
+  "errorGroupFull": "Grupo já está cheio (5 membros)",
+  "toastJoined": "Você entrou no grupo!",
+  "toastRemoved": "Grupo \"{{name}}\" removido",
+  "errorRemoving": "Erro ao remover grupo",
+  "toastAdded": "Grupo \"{{name}}\" adicionado",
+  "errorAdding": "Erro ao adicionar grupo",
+  "errorMaxGroups": "Limite de {{max}} grupos atingido",
+  "toastConfirmed": "Grupos confirmados com sucesso!",
+  "errorConfirming": "Erro ao confirmar",
+  "cargo": {
+    "dialogTitle": "Escolha seu cargo — {{groupName}}",
+    "confirmEntry": "Confirmar entrada",
+    "founder": {
+      "label": "Fundador",
+      "description": "Visão geral do projeto e tomada de decisão"
+    },
+    "estrategista": {
+      "label": "Estrategista de Negócio",
+      "description": "Modelo de negócio, viabilidade e posicionamento"
+    },
+    "construtor": {
+      "label": "Construtor",
+      "description": "Executa o produto ou serviço usando as ferramentas disponíveis"
+    },
+    "closer": {
+      "label": "Closer",
+      "description": "Vendas e aquisição dos primeiros clientes"
+    },
+    "analista": {
+      "label": "Analista de Mercado",
+      "description": "Pesquisa, validação e métricas"
+    }
+  }
+}

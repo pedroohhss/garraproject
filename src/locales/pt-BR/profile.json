@@ -1,0 +1,11 @@
+{
+  "title": "Perfil",
+  "userNotFound": "Usuário não encontrado.",
+  "memberSince": "Membro desde {{date}}",
+  "edit": "Editar",
+  "about": "Sobre",
+  "shortTermGoal": "Objetivo de Curto Prazo",
+  "longTermGoal": "Objetivo de Longo Prazo",
+  "skills": "Habilidades",
+  "roles": "Cargos que melhor me representam"
+}
