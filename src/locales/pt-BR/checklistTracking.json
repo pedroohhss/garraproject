@@ -1,0 +1,14 @@
+{
+  "title": "Acompanhamento de Checklist",
+  "selectWeek": "Selecione uma semana",
+  "weekOption": "Semana {{number}} — {{title}}",
+  "weekOptionInactive": "Semana {{number}} — {{title}} (inativa)",
+  "criteriaCount": "{{count}} critérios · {{max}} pts possíveis",
+  "noCriteria": "Nenhum critério cadastrado para esta semana.",
+  "noGroups": "Nenhum grupo encontrado.",
+  "pending": "Pendente",
+  "filled": "Preenchido",
+  "sheetTitle": "Checklist — {{title}}",
+  "submittedAt": "Preenchido em {{date}}",
+  "total": "Total"
+}

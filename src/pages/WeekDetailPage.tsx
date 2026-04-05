@@ -492,7 +492,7 @@ function ActivitiesTab({ weekId, activities, deliveries, deliveryCounts, isAdmin
                     <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
                     {activity.deadline && (
                       <p className={cn("text-xs mt-1", status === "atrasado" ? "text-destructive" : "text-muted-foreground")}>
-                        {t("adminActivities.deadline", { date: format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm") })}
+                        {t("adminActivities.deadline", { date: format(new Date(activity.deadline), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}
                       </p>
                     )}
                   </div>
@@ -525,7 +525,7 @@ function ActivitiesTab({ weekId, activities, deliveries, deliveryCounts, isAdmin
                         <Send className="h-3.5 w-3.5" /> {delivery ? t("common.resubmit") : t("common.deliver")}
                       </Button>
                     ) : delivery ? (
-                      <p className="text-xs text-primary">{t("deliveries.submittedAt", { date: format(new Date(delivery.submitted_at!), "dd/MM/yyyy 'às' HH:mm") })}</p>
+                      <p className="text-xs text-primary">{t("deliveries.submittedAt", { date: format(new Date(delivery.submitted_at!), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}</p>
                     ) : status === "atrasado" ? (
                       <p className="text-xs text-destructive">{t("adminActivities.deadlinePassed")}</p>
                     ) : null}
@@ -927,7 +927,7 @@ function DeliveriesTab({ activities, deliveries, groups, isAdmin, onReload }: {
               <>
                 <div className="border-t border-border pt-4 space-y-3">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("weeks.tabs.deliveries")}</p>
-                  <p className="text-xs text-muted-foreground">{t("deliveries.submittedAt", { date: format(new Date(selectedDelivery.submitted_at!), "dd/MM/yyyy 'às' HH:mm") })}</p>
+                  <p className="text-xs text-muted-foreground">{t("deliveries.submittedAt", { date: format(new Date(selectedDelivery.submitted_at!), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}</p>
                   {selectedDelivery.content_text && <div className="bg-secondary/50 rounded-lg p-3"><p className="text-sm text-foreground whitespace-pre-wrap">{selectedDelivery.content_text}</p></div>}
                   {selectedDelivery.content_link && <a href={selectedDelivery.content_link} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1"><ExternalLink className="h-3.5 w-3.5" /> {selectedDelivery.content_link}</a>}
                   {selectedDelivery.content_file_url && <a href={selectedDelivery.content_file_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> {t("common.viewFile")}</a>}

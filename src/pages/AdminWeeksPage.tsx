@@ -49,41 +49,10 @@ function getWeekStatus(week: Week, activeNumber: number | null): WeekStatus {
   return "futura";
 }
 
-const DEFAULT_CRITERIA: Record<number, { description: string; points: number }[]> = {
-  1: [
-    { description: "Ideia cadastrada e votação participada", points: 10 },
-    { description: "Grupo formado com 5 membros", points: 10 },
-    { description: "Reunião de alinhamento realizada", points: 10 },
-  ],
-  2: [
-    { description: "BMC preenchido e entregue", points: 10 },
-    { description: "5 entrevistas de validação realizadas", points: 10 },
-    { description: "Hipótese principal definida", points: 10 },
-  ],
-  3: [
-    { description: "Pitch apresentado na reunião", points: 10 },
-    { description: "MVP definido com escopo claro", points: 10 },
-    { description: "Primeira versão construída", points: 10 },
-  ],
-  4: [
-    { description: "MVP testado com pessoas externas", points: 10 },
-    { description: "3 pontos de melhoria implementados", points: 10 },
-    { description: "Material de apresentação iniciado", points: 10 },
-  ],
-  5: [
-    { description: "Canal de aquisição testado", points: 10 },
-    { description: "Tentativa real de venda realizada", points: 10 },
-    { description: "Métricas registradas", points: 10 },
-  ],
-  6: [
-    { description: "Apresentação final entregue", points: 10 },
-    { description: "Carta de transformação escrita", points: 10 },
-    { description: "Próximo passo definido por cada membro", points: 10 },
-  ],
-};
 
 export default function AdminWeeksPage() {
   const { t } = useTranslation();
+  const defaultCriteriaByWeek = t("weeks.defaultCriteria", { returnObjects: true }) as Record<string, { description: string; points: number }[]>;
 
   const STATUS_BADGE: Record<WeekStatus, { label: string; className: string }> = {
     futura: { label: t("common.inactive"), className: "bg-secondary text-secondary-foreground" },
@@ -151,7 +120,7 @@ export default function AdminWeeksPage() {
       // Auto-populate criteria if none exist for this week
       const weekCriteria = criteria.filter((c) => c.week_id === activateTarget.id);
       if (weekCriteria.length === 0) {
-        const defaults = DEFAULT_CRITERIA[activateTarget.number] ?? [];
+        const defaults = defaultCriteriaByWeek[String(activateTarget.number)] ?? [];
         if (defaults.length > 0) {
           await supabase.from("checklist_criteria").insert(
             defaults.map((d) => ({ week_id: activateTarget.id, description: d.description, points: d.points }))
@@ -177,7 +146,7 @@ export default function AdminWeeksPage() {
       // Auto-populate criteria for next week
       const nextCriteria = criteria.filter((c) => c.week_id === next.id);
       if (nextCriteria.length === 0) {
-        const defaults = DEFAULT_CRITERIA[next.number] ?? [];
+        const defaults = defaultCriteriaByWeek[String(next.number)] ?? [];
         if (defaults.length > 0) {
           await supabase.from("checklist_criteria").insert(
             defaults.map((d) => ({ week_id: next.id, description: d.description, points: d.points }))
@@ -263,7 +232,7 @@ export default function AdminWeeksPage() {
 
   const populateDefaults = async () => {
     if (!criteriaWeek) return;
-    const defaults = DEFAULT_CRITERIA[criteriaWeek.number] ?? [];
+    const defaults = defaultCriteriaByWeek[String(criteriaWeek.number)] ?? [];
     if (defaults.length === 0) return;
     await supabase.from("checklist_criteria").insert(
       defaults.map((d) => ({ week_id: criteriaWeek.id, description: d.description, points: d.points }))

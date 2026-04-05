@@ -20,8 +20,6 @@ const ESTADOS_BR = [
   "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
 ];
 
-const SEXO_OPTIONS = ["Masculino", "Feminino", "Outro", "Prefiro não dizer"];
-const ESTADO_CIVIL_OPTIONS = ["Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)", "Outro"];
 
 interface FormData {
   full_name: string;
@@ -51,6 +49,8 @@ const EMPTY_FORM: FormData = {
 
 export default function EditProfilePage() {
   const { t } = useTranslation();
+  const sexoOptions = t("editProfile.genderOptions", { returnObjects: true }) as string[];
+  const estadoCivilOptions = t("editProfile.maritalStatusOptions", { returnObjects: true }) as string[];
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
@@ -216,7 +216,7 @@ export default function EditProfilePage() {
                 <Select value={form.sexo || undefined} onValueChange={(v) => set("sexo", v)}>
                   <SelectTrigger><SelectValue placeholder={t("editProfile.select")} /></SelectTrigger>
                   <SelectContent>
-                    {SEXO_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {sexoOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -230,7 +230,7 @@ export default function EditProfilePage() {
               <Select value={form.estado_civil || undefined} onValueChange={(v) => set("estado_civil", v)}>
                 <SelectTrigger><SelectValue placeholder={t("editProfile.select")} /></SelectTrigger>
                 <SelectContent>
-                  {ESTADO_CIVIL_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {estadoCivilOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -356,8 +356,8 @@ export default function EditProfilePage() {
                 >
                   <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
                   <div>
-                    <p className="text-sm font-medium text-foreground">{cargo.label}</p>
-                    <p className="text-xs text-muted-foreground">{cargo.description}</p>
+                    <p className="text-sm font-medium text-foreground">{t(cargo.labelKey)}</p>
+                    <p className="text-xs text-muted-foreground">{t(cargo.descriptionKey)}</p>
                   </div>
                 </button>
               );

@@ -270,7 +270,7 @@ export default function DeliveryTrackingPage() {
                 <div className="border-t border-border pt-4 space-y-3">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("deliveryTracking.sheetDelivery")}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t("deliveryTracking.sheetSentAt", { date: selectedDelivery.submitted_at ? format(new Date(selectedDelivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—" })}
+                    {t("deliveryTracking.sheetSentAt", { date: selectedDelivery.submitted_at ? format(new Date(selectedDelivery.submitted_at), `dd/MM/yyyy '${t("common.at")}' HH:mm`) : "—" })}
                   </p>
 
                   {selectedDelivery.content_text && (

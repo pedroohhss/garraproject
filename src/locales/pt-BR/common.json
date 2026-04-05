@@ -40,5 +40,11 @@
   "deliver": "Entregar",
   "resubmit": "Reenviar",
   "required_plural": "Obrigatórios",
-  "optional_plural": "Opcionais"
+  "optional_plural": "Opcionais",
+  "roles": {
+    "admin": "Administrador",
+    "lider": "Líder",
+    "participante": "Participante",
+    "representante": "Representante"
+  }
 }

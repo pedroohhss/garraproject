@@ -9,18 +9,18 @@ import { useTranslation } from "react-i18next";
 
 export interface CargoInfo {
   value: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   required: boolean;
   icon: React.ElementType;
 }
 
 export const CARGOS: CargoInfo[] = [
-  { value: "fundador", label: "Fundador", description: "Visão geral do projeto e tomada de decisão", required: true, icon: Crown },
-  { value: "estrategista", label: "Estrategista de Negócio", description: "Modelo de negócio, viabilidade e posicionamento", required: true, icon: Target },
-  { value: "construtor", label: "Construtor", description: "Executa o produto ou serviço usando as ferramentas disponíveis", required: true, icon: Wrench },
-  { value: "closer", label: "Closer", description: "Vendas e aquisição dos primeiros clientes", required: false, icon: Handshake },
-  { value: "analista", label: "Analista de Mercado", description: "Pesquisa, validação e métricas", required: false, icon: BarChart3 },
+  { value: "fundador", labelKey: "groups.cargo.founder.label", descriptionKey: "groups.cargo.founder.description", required: true, icon: Crown },
+  { value: "estrategista", labelKey: "groups.cargo.estrategista.label", descriptionKey: "groups.cargo.estrategista.description", required: true, icon: Target },
+  { value: "construtor", labelKey: "groups.cargo.construtor.label", descriptionKey: "groups.cargo.construtor.description", required: true, icon: Wrench },
+  { value: "closer", labelKey: "groups.cargo.closer.label", descriptionKey: "groups.cargo.closer.description", required: false, icon: Handshake },
+  { value: "analista", labelKey: "groups.cargo.analista.label", descriptionKey: "groups.cargo.analista.description", required: false, icon: BarChart3 },
 ];
 
 interface Props {
@@ -76,7 +76,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
                 <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{cargo.label}</span>
+                    <span className="text-sm font-medium text-foreground">{t(cargo.labelKey)}</span>
                     {cargo.required ? (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0">{t("common.required")}</Badge>
                     ) : (
@@ -84,7 +84,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
                     )}
                     {occupied && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{cargo.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t(cargo.descriptionKey)}</p>
                 </div>
               </button>
             );

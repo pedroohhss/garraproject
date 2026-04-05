@@ -40,5 +40,7 @@
   "errorImageTooBig": "Imagem deve ter no máximo 2MB",
   "errorNameRequired": "Nome completo é obrigatório",
   "successSaved": "Perfil atualizado!",
-  "submit": "Salvar Perfil"
+  "submit": "Salvar Perfil",
+  "genderOptions": ["Masculino", "Feminino", "Outro", "Prefiro não dizer"],
+  "maritalStatusOptions": ["Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)", "Outro"]
 }

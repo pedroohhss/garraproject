@@ -9,5 +9,6 @@
   "logout": "Sair",
   "logoutTitle": "Sair da conta",
   "logoutDescription": "Tem certeza que deseja sair? Você precisará fazer login novamente para acessar o sistema.",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+  "profile": "Perfil"
 }

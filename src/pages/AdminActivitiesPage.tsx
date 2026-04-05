@@ -253,7 +253,7 @@ export default function AdminActivitiesPage() {
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
                             {activity.deadline && (
                               <p className={cn("text-xs mt-1", isPastDeadline ? "text-destructive" : "text-muted-foreground")}>
-                                {t("adminActivities.deadline", { date: format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm") })}
+                                {t("adminActivities.deadline", { date: format(new Date(activity.deadline), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}
                               </p>
                             )}
                           </div>

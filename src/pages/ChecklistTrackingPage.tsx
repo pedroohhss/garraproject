@@ -176,7 +176,7 @@ export default function ChecklistTrackingPage() {
                     )}
                     {entry?.submitted_at && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {t("checklistTracking.submittedAt", { date: format(new Date(entry.submitted_at), "dd/MM/yyyy 'às' HH:mm") })}
+                        {t("checklistTracking.submittedAt", { date: format(new Date(entry.submitted_at), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}
                       </p>
                     )}
                   </div>

@@ -1,5 +1,41 @@
 {
   "title": "Semanas",
+  "status": {
+    "future": "Futura",
+    "ended": "Encerrada"
+  },
+  "defaultCriteria": {
+    "1": [
+      { "description": "Ideia cadastrada e votação participada", "points": 10 },
+      { "description": "Grupo formado com 5 membros", "points": 10 },
+      { "description": "Reunião de alinhamento realizada", "points": 10 }
+    ],
+    "2": [
+      { "description": "BMC preenchido e entregue", "points": 10 },
+      { "description": "5 entrevistas de validação realizadas", "points": 10 },
+      { "description": "Hipótese principal definida", "points": 10 }
+    ],
+    "3": [
+      { "description": "Pitch apresentado na reunião", "points": 10 },
+      { "description": "MVP definido com escopo claro", "points": 10 },
+      { "description": "Primeira versão construída", "points": 10 }
+    ],
+    "4": [
+      { "description": "MVP testado com pessoas externas", "points": 10 },
+      { "description": "3 pontos de melhoria implementados", "points": 10 },
+      { "description": "Material de apresentação iniciado", "points": 10 }
+    ],
+    "5": [
+      { "description": "Canal de aquisição testado", "points": 10 },
+      { "description": "Tentativa real de venda realizada", "points": 10 },
+      { "description": "Métricas registradas", "points": 10 }
+    ],
+    "6": [
+      { "description": "Apresentação final entregue", "points": 10 },
+      { "description": "Carta de transformação escrita", "points": 10 },
+      { "description": "Próximo passo definido por cada membro", "points": 10 }
+    ]
+  },
   "activeWeek": "Semana ativa: {{number}} — {{title}}",
   "advanceWeek": "Avançar semana",
   "endChallenge": "Encerrar desafio",
@@ -35,26 +71,5 @@
     "activities": "Atividades",
     "checklist": "Checklist",
     "deliveries": "Entregas"
-  },
-  "materialsSection": {
-    "publishMaterial": "Publicar Material",
-    "noMaterials": "Nenhum material publicado para esta semana.",
-    "editMaterial": "Editar Material",
-    "fieldTitle": "Título",
-    "fieldDescription": "Descrição",
-    "fieldType": "Tipo",
-    "fieldUrl": "URL / Link",
-    "fieldRequired": "Obrigatório",
-    "deleteTitle": "Remover material?",
-    "deleteDescription": "\"{{title}}\" será removido.",
-    "toastUpdated": "Material atualizado",
-    "toastCreated": "Material publicado",
-    "toastDeleted": "Material removido",
-    "types": {
-      "leitura": "Leitura",
-      "video": "Vídeo",
-      "template": "Template",
-      "ferramenta": "Ferramenta"
-    }
   }
 }

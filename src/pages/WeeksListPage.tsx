@@ -40,38 +40,6 @@ function getWeekStatus(week: Week, activeNumber: number | null): WeekStatus {
   return "futura";
 }
 
-const DEFAULT_CRITERIA: Record<number, { description: string; points: number }[]> = {
-  1: [
-    { description: "Ideia cadastrada e votação participada", points: 10 },
-    { description: "Grupo formado com 5 membros", points: 10 },
-    { description: "Reunião de alinhamento realizada", points: 10 },
-  ],
-  2: [
-    { description: "BMC preenchido e entregue", points: 10 },
-    { description: "5 entrevistas de validação realizadas", points: 10 },
-    { description: "Hipótese principal definida", points: 10 },
-  ],
-  3: [
-    { description: "Pitch apresentado na reunião", points: 10 },
-    { description: "MVP definido com escopo claro", points: 10 },
-    { description: "Primeira versão construída", points: 10 },
-  ],
-  4: [
-    { description: "MVP testado com pessoas externas", points: 10 },
-    { description: "3 pontos de melhoria implementados", points: 10 },
-    { description: "Material de apresentação iniciado", points: 10 },
-  ],
-  5: [
-    { description: "Canal de aquisição testado", points: 10 },
-    { description: "Tentativa real de venda realizada", points: 10 },
-    { description: "Métricas registradas", points: 10 },
-  ],
-  6: [
-    { description: "Apresentação final entregue", points: 10 },
-    { description: "Carta de transformação escrita", points: 10 },
-    { description: "Próximo passo definido por cada membro", points: 10 },
-  ],
-};
 
 export default function WeeksListPage() {
   const { t } = useTranslation();
@@ -92,10 +60,12 @@ export default function WeeksListPage() {
   const [editForm, setEditForm] = useState({ title: "", theme: "", starts_at: null as Date | null, ends_at: null as Date | null });
   const [saving, setSaving] = useState(false);
 
+  const defaultCriteriaByWeek = t("weeks.defaultCriteria", { returnObjects: true }) as Record<string, { description: string; points: number }[]>;
+
   const STATUS_BADGE: Record<WeekStatus, { label: string; className: string }> = {
-    futura: { label: "Futura", className: "bg-secondary text-secondary-foreground" },
+    futura: { label: t("weeks.status.future"), className: "bg-secondary text-secondary-foreground" },
     ativa: { label: t("common.active_f"), className: "bg-primary text-primary-foreground" },
-    encerrada: { label: "Encerrada", className: "bg-muted text-muted-foreground" },
+    encerrada: { label: t("weeks.status.ended"), className: "bg-muted text-muted-foreground" },
   };
 
   const loadWeeks = useCallback(async () => {
@@ -122,7 +92,7 @@ export default function WeeksListPage() {
       .eq("id", activateTarget.id);
     const { data: existingCriteria } = await supabase.from("checklist_criteria").select("id").eq("week_id", activateTarget.id);
     if ((existingCriteria ?? []).length === 0) {
-      const defaults = DEFAULT_CRITERIA[activateTarget.number] ?? [];
+      const defaults = defaultCriteriaByWeek[String(activateTarget.number)] ?? [];
       if (defaults.length > 0) {
         await supabase.from("checklist_criteria").insert(
           defaults.map((d) => ({ week_id: activateTarget.id, description: d.description, points: d.points }))
@@ -145,16 +115,16 @@ export default function WeeksListPage() {
       await supabase.from("weeks").update({ is_active: true, starts_at: now }).eq("id", next.id);
       const { data: existingCriteria } = await supabase.from("checklist_criteria").select("id").eq("week_id", next.id);
       if ((existingCriteria ?? []).length === 0) {
-        const defaults = DEFAULT_CRITERIA[next.number] ?? [];
+        const defaults = defaultCriteriaByWeek[String(next.number)] ?? [];
         if (defaults.length > 0) {
           await supabase.from("checklist_criteria").insert(
             defaults.map((d) => ({ week_id: next.id, description: d.description, points: d.points }))
           );
         }
       }
-      toast({ title: `Avançou para ${t("common.week")} ${next.number}!` });
+      toast({ title: t("weeks.advanceTitle_next", { number: next.number }) });
     } else {
-      toast({ title: "Desafio encerrado!" });
+      toast({ title: t("weeks.challengeEnded") });
     }
     await loadWeeks();
     setAdvancing(false);
@@ -181,7 +151,7 @@ export default function WeeksListPage() {
       starts_at: editForm.starts_at ? format(editForm.starts_at, "yyyy-MM-dd") : null,
       ends_at: editForm.ends_at ? format(editForm.ends_at, "yyyy-MM-dd") : null,
     }).eq("id", editTarget.id);
-    toast({ title: "Semana atualizada" });
+    toast({ title: t("weeks.editTitle", { number: editTarget.number }) });
     await loadWeeks();
     setSaving(false);
     setEditTarget(null);

@@ -238,7 +238,7 @@ export default function ActivitiesPage() {
                         "text-xs font-medium",
                         status === "atrasado" ? "text-destructive" : "text-muted-foreground"
                       )}>
-                        {t("activities.deadline", { date: format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm") })}
+                        {t("activities.deadline", { date: format(new Date(activity.deadline), `dd/MM/yyyy '${t("common.at")}' HH:mm`) })}
                       </p>
                     )}
 
@@ -251,7 +251,7 @@ export default function ActivitiesPage() {
                           </Button>
                         ) : status === "entregue" ? (
                           <p className="text-xs text-primary">
-                            {t("activities.deliveredAt", { date: delivery?.submitted_at ? format(new Date(delivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—" })}
+                            {t("activities.deliveredAt", { date: delivery?.submitted_at ? format(new Date(delivery.submitted_at), `dd/MM/yyyy '${t("common.at")}' HH:mm`) : "—" })}
                           </p>
                         ) : status === "atrasado" ? (
                           <p className="text-xs text-destructive">{t("activities.deadlinePassed")}</p>

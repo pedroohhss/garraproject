@@ -1,0 +1,22 @@
+{
+  "publishMaterial": "Publicar Material",
+  "editMaterial": "Editar Material",
+  "noMaterials": "Nenhum material publicado para esta semana.",
+  "fieldTitle": "Título",
+  "fieldDescription": "Descrição",
+  "fieldType": "Tipo",
+  "fieldUrl": "URL / Link",
+  "fieldRequired": "Obrigatório",
+  "deleteTitle": "Remover material?",
+  "deleteDescription": "\"{{title}}\" será removido.",
+  "toastUpdated": "Material atualizado",
+  "toastCreated": "Material publicado",
+  "toastDeleted": "Material removido",
+  "errorTitleRequired": "Título é obrigatório",
+  "types": {
+    "leitura": "Leitura",
+    "video": "Vídeo",
+    "template": "Template",
+    "ferramenta": "Ferramenta"
+  }
+}

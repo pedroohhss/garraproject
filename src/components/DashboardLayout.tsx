@@ -240,7 +240,7 @@ export default function DashboardLayout({ children, title, breadcrumbLabel }: Da
           </Link>
           <Link to={profile?.id ? `/perfil/${profile.id}` : "#"} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
             <p className="text-sm text-foreground truncate">{profile?.full_name ?? "..."}</p>
-            <p className="text-xs text-muted-foreground truncate capitalize">{role}</p>
+            <p className="text-xs text-muted-foreground truncate">{t(`common.roles.${role}`, { defaultValue: role })}</p>
           </Link>
           <button
             onClick={() => setShowLogoutConfirm(true)}
@@ -337,7 +337,7 @@ export default function DashboardLayout({ children, title, breadcrumbLabel }: Da
               title={t("layout.viewProfile")}
             >
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={profile?.full_name ?? "Perfil"} className="w-full h-full object-cover rounded-full" />
+                <img src={profile.avatar_url} alt={profile?.full_name ?? t("layout.profile")} className="w-full h-full object-cover rounded-full" />
               ) : (
                 <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold rounded-full">
                   {initials}
