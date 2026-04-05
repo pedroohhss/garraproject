@@ -723,7 +723,7 @@ function ChecklistTab({ weekId, criteria, entries, hasSubmissions, isAdmin, isRe
                 <div key={c.id} className="glass-card p-4 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{c.description}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("common.points", { points: c.points })}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("common.points", { count: c.points })}</p>
                   </div>
                   {locked && <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">{t("adminChecklist.hasDeliveries")}</Badge>}
                   <div className="flex gap-1 shrink-0">
@@ -777,7 +777,7 @@ function ChecklistTab({ weekId, criteria, entries, hasSubmissions, isAdmin, isRe
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="text-sm text-foreground font-medium">{c.description}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t("common.points", { points: c.points })}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("common.points", { count: c.points })}</p>
                     </div>
                     {isRepresentante && !submitted ? (
                       <Switch checked={checked} onCheckedChange={(v) => setToggles((prev) => new Map(prev).set(c.id, v))} />

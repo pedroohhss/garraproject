@@ -147,7 +147,7 @@ export default function ChecklistPage() {
             <Badge className="bg-primary text-primary-foreground text-sm px-3 py-1">{weekTitle}</Badge>
             <div className="flex-1" />
             <div className="text-sm text-foreground font-medium">
-              {totalPoints}/{maxPoints} {t("common.points")}
+              {totalPoints}/{t("common.points", { count: maxPoints })}
             </div>
           </div>
 
@@ -167,7 +167,7 @@ export default function ChecklistPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="text-sm text-foreground font-medium">{criterion.description}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{criterion.points} {t("common.points")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("common.points", { count: criterion.points })}</p>
                     </div>
                     {isRepresentante && !submitted ? (
                       <Switch

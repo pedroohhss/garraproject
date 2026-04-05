@@ -173,7 +173,7 @@ export default function RankingPage() {
 
                 <div className="text-right shrink-0">
                   <p className="text-lg font-bold text-foreground">{group.totalPoints}</p>
-                  <p className="text-xs text-muted-foreground">{t("common.points")}</p>
+                  <p className="text-xs text-muted-foreground">{t("common.points_plural")}</p>
                 </div>
               </div>
             );

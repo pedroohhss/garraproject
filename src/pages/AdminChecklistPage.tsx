@@ -186,7 +186,7 @@ export default function AdminChecklistPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{c.description}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("common.points", { points: c.points })}
+                    {t("common.points", { count: c.points })}
                   </p>
                 </div>
                 {locked && (

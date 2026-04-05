@@ -20,7 +20,7 @@
   "required": "Obrigatório",
   "optional": "Opcional",
   "noGroup": "Sem grupo",
-  "points": "{{points}} pontos",
+  "points": "{{count}} pontos",
   "points_plural": "pontos",
   "week": "Semana",
   "active_f": "Ativa",

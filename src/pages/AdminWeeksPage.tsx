@@ -345,8 +345,9 @@ export default function AdminWeeksPage() {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   <ClipboardCheck className="h-3 w-3 inline mr-1" />
-                  {wCriteria.length} {t("adminWeeks.criteria")} · {wCriteria.reduce((s, c) => s + (c.points ?? 0), 0)} {t("common.points")}
+                  {wCriteria.length} {t("adminWeeks.criteria")} · {t("common.points", { count: wCriteria.reduce((s, c) => s + (c.points ?? 0), 0) })}
                 </div>
+
                 <div className="flex gap-2 pt-1 flex-wrap">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(week)} className="gap-1 text-xs">
                     <Pencil className="h-3 w-3" /> {t("common.edit")}
