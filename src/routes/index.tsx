@@ -1,6 +1,7 @@
 import { useRoutes } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import { RoleRedirect } from "./guards";
+import ForbiddenPage from "@/pages/ForbiddenPage";
+import { RoleRedirect, ProtectedRoute } from "./guards";
 import { authRoutes } from "./auth.routes";
 import { adminRoutes } from "./admin.routes";
 import { liderRoutes } from "./lider.routes";
@@ -15,6 +16,10 @@ export function AppRoutes() {
     ...liderRoutes,
     ...participanteRoutes,
     ...profileRoutes,
+    {
+      path: "/sem-acesso",
+      element: <ProtectedRoute><ForbiddenPage /></ProtectedRoute>,
+    },
     { path: "*", element: <NotFound /> },
   ]);
 }

@@ -50,8 +50,9 @@ export function ProtectedRoute({
 
   if (allowedRoles && profile) {
     const role = profile.role ?? "participante";
-    if (!allowedRoles.includes(role)) {
-      return <Navigate to="/" replace />;
+    const isAdmin = role === "admin";
+    if (!isAdmin && !allowedRoles.includes(role)) {
+      return <Navigate to="/sem-acesso" replace />;
     }
   }
 
@@ -62,5 +63,17 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
   if (user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+/** Redireciona para /sem-acesso?reason=unavailable quando a feature não foi liberada. */
+export function FeatureRoute({
+  available,
+  children,
+}: {
+  available: boolean;
+  children: React.ReactNode;
+}) {
+  if (!available) return <Navigate to="/sem-acesso?reason=unavailable" replace />;
   return <>{children}</>;
 }
