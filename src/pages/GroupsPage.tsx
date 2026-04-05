@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import CargoSelectDialog, { CARGOS } from "@/components/CargoSelectDialog";
+import { useTranslation } from "react-i18next";
 
 interface GroupMember {
   user_id: string;
@@ -43,6 +44,7 @@ const MAX_GROUPS = 15;
 const REQUIRED_CARGOS = ["fundador", "estrategista", "construtor"];
 
 export default function GroupsPage() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [groups, setGroups] = useState<GroupData[]>([]);
@@ -151,11 +153,11 @@ export default function GroupsPage() {
     e.stopPropagation();
     if (!user) return;
     if (userMembership) {
-      toast({ title: "Você já pertence a um grupo", variant: "destructive" });
+      toast({ title: t("groups.errorAlreadyInGroup"), variant: "destructive" });
       return;
     }
     if (group.members.length >= MAX_PER_GROUP) {
-      toast({ title: "Grupo já está cheio (5 membros)", variant: "destructive" });
+      toast({ title: t("groups.errorGroupFull"), variant: "destructive" });
       return;
     }
     setCargoTargetGroup(group);
@@ -171,7 +173,7 @@ export default function GroupsPage() {
     } as any);
     if (error) throw error;
     await supabase.from("users").update({ group_id: cargoTargetGroup.id }).eq("id", user.id);
-    toast({ title: "Você entrou no grupo!" });
+    toast({ title: t("groups.toastJoined") });
     setLoading(true);
     await fetchData();
   };
@@ -189,12 +191,12 @@ export default function GroupsPage() {
       }
       const { error } = await supabase.from("groups").delete().eq("id", removeDialogGroup.id);
       if (error) throw error;
-      toast({ title: `Grupo "${removeDialogGroup.name}" removido` });
+      toast({ title: t("groups.toastRemoved", { name: removeDialogGroup.name }) });
       setRemoveDialogGroup(null);
       setLoading(true);
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao remover grupo", description: err.message, variant: "destructive" });
+      toast({ title: t("groups.errorRemoving"), description: err.message, variant: "destructive" });
     } finally {
       setRemoving(false);
     }
@@ -203,7 +205,7 @@ export default function GroupsPage() {
   // Admin: add a group from an unselected idea
   const handleAddGroup = async (idea: UnselectedIdea) => {
     if (groups.length >= MAX_GROUPS) {
-      toast({ title: `Limite de ${MAX_GROUPS} grupos atingido`, variant: "destructive" });
+      toast({ title: t("groups.errorMaxGroups", { max: MAX_GROUPS }), variant: "destructive" });
       return;
     }
     setAdding(idea.id);
@@ -224,12 +226,12 @@ export default function GroupsPage() {
         await supabase.from("users").update({ group_id: group.id }).eq("id", idea.created_by);
       }
 
-      toast({ title: `Grupo "${idea.title}" adicionado` });
+      toast({ title: t("groups.toastAdded", { name: idea.title }) });
       setAddDialogOpen(false);
       setLoading(true);
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao adicionar grupo", description: err.message, variant: "destructive" });
+      toast({ title: t("groups.errorAdding"), description: err.message, variant: "destructive" });
     } finally {
       setAdding(null);
     }
@@ -244,37 +246,37 @@ export default function GroupsPage() {
         await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", cfgData.id);
       }
       setConfig((prev) => prev ? { ...prev, groups_confirmed: true } : prev);
-      toast({ title: "Grupos confirmados com sucesso!" });
+      toast({ title: t("groups.toastConfirmed") });
       setConfirmDialogOpen(false);
     } catch (err: any) {
-      toast({ title: "Erro ao confirmar", description: err.message, variant: "destructive" });
+      toast({ title: t("groups.errorConfirming"), description: err.message, variant: "destructive" });
     } finally {
       setConfirming(false);
     }
   };
 
   return (
-    <DashboardLayout title="Grupos">
+    <DashboardLayout title={t("groups.title")}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <p className="text-sm text-muted-foreground">
-          {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
-          {groups.length > 0 && ` · Limite: ${MAX_GROUPS}`}
+          {t("groups.count", { count: groups.length })}
+          {groups.length > 0 && t("groups.limit", { max: MAX_GROUPS })}
         </p>
 
         {/* Admin actions */}
         {isAdmin && groups.length > 0 && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddDialogOpen(true)} disabled={groups.length >= MAX_GROUPS}>
-              <Plus className="h-3.5 w-3.5" /> Adicionar grupo
+              <Plus className="h-3.5 w-3.5" /> {t("groups.addGroup")}
             </Button>
             {!config?.groups_confirmed && (
               <Button size="sm" className="gap-1.5" onClick={() => setConfirmDialogOpen(true)}>
-                <CheckCircle2 className="h-3.5 w-3.5" /> Confirmar grupos
+                <CheckCircle2 className="h-3.5 w-3.5" /> {t("groups.confirmGroups")}
               </Button>
             )}
             {config?.groups_confirmed && (
               <Badge variant="default" className="gap-1">
-                <CheckCircle2 className="h-3 w-3" /> Confirmados
+                <CheckCircle2 className="h-3 w-3" /> {t("groups.confirmed")}
               </Badge>
             )}
           </div>
@@ -286,10 +288,9 @@ export default function GroupsPage() {
         <div className="glass-card p-4 mb-6 flex items-start gap-3 border-yellow-500/30 bg-yellow-500/5">
           <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-foreground">Revise os grupos antes de confirmar</p>
+            <p className="text-sm font-medium text-foreground">{t("groups.reviewTitle")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Você pode remover grupos indesejados e adicionar outros a partir de ideias não selecionadas.
-              Após confirmar, use o toggle "Entrada nos grupos" no painel admin para liberar a entrada dos participantes.
+              {t("groups.reviewDescription")}
             </p>
           </div>
         </div>
@@ -308,8 +309,8 @@ export default function GroupsPage() {
       ) : groups.length === 0 ? (
         <div className="glass-card p-12 flex flex-col items-center text-center space-y-3">
           <Users className="h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">Nenhum grupo formado ainda.</p>
-          <p className="text-xs text-muted-foreground">Os grupos serão criados automaticamente quando a votação for encerrada.</p>
+          <p className="text-muted-foreground">{t("groups.noGroupsYet")}</p>
+          <p className="text-xs text-muted-foreground">{t("groups.groupsAutoCreated")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,7 +349,7 @@ export default function GroupsPage() {
                 </div>
 
                 {group.ideaTitle && (
-                  <p className="text-xs text-muted-foreground">Ideia: {group.ideaTitle}</p>
+                  <p className="text-xs text-muted-foreground">{t("groups.idea", { title: group.ideaTitle })}</p>
                 )}
 
                 {/* Cargo slots */}
@@ -368,7 +369,7 @@ export default function GroupsPage() {
                         }`}
                       >
                         <Icon className="h-3 w-3" />
-                        <span>{member ? member.full_name.split(" ")[0] : "Vago"}</span>
+                        <span>{member ? member.full_name.split(" ")[0] : t("groups.vacant")}</span>
                       </div>
                     );
                   })}
@@ -384,19 +385,19 @@ export default function GroupsPage() {
                       onClick={(e) => handleJoinClick(group, e)}
                       disabled={!!userMembership || isFull}
                       title={
-                        isMyGroup ? "Você já está neste grupo"
-                          : userMembership ? "Você já pertence a outro grupo"
-                          : isFull ? "Grupo cheio"
-                          : "Entrar neste grupo"
+                        isMyGroup ? t("groups.errorAlreadyInGroup")
+                          : userMembership ? t("groups.errorAlreadyInGroup")
+                          : isFull ? t("groups.errorGroupFull")
+                          : t("groups.join")
                       }
                     >
                       {isMyGroup ? <Users className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
-                      {isMyGroup ? "Meu grupo" : "Entrar"}
+                      {isMyGroup ? t("groups.myGroup") : t("groups.join")}
                     </Button>
 
                     {missingRequired.length > 0 && (
                       <span className="text-[10px] text-destructive">
-                        Falta: {missingRequired.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}
+                        {t("groups.missing", { roles: missingRequired.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ") })}
                       </span>
                     )}
                   </div>
@@ -429,7 +430,7 @@ export default function GroupsPage() {
               <div className="space-y-4 pt-2">
                 {detailGroup.ideaTitle && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Ideia original</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("groups.originalIdea")}</p>
                     <p className="text-sm text-foreground font-medium">{detailGroup.ideaTitle}</p>
                     {detailGroup.ideaDescription && (
                       <p className="text-sm text-muted-foreground mt-1">{detailGroup.ideaDescription}</p>
@@ -439,7 +440,7 @@ export default function GroupsPage() {
 
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Membros ({detailGroup.members.length}/{MAX_PER_GROUP})
+                    {t("groups.membersCount", { current: detailGroup.members.length, max: MAX_PER_GROUP })}
                   </p>
                   {detailGroup.members.length > 0 ? (
                     <div className="space-y-1.5">
@@ -461,7 +462,7 @@ export default function GroupsPage() {
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Nenhum membro ainda.</p>
+                    <p className="text-sm text-muted-foreground">{t("groups.noMembers")}</p>
                   )}
                 </div>
 
@@ -471,7 +472,7 @@ export default function GroupsPage() {
                   if (vacant.length === 0) return null;
                   return (
                     <div>
-                      <p className="text-xs text-destructive mb-1">Cargos obrigatórios vagos:</p>
+                      <p className="text-xs text-destructive mb-1">{t("groups.requiredRolesVacant")}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {vacant.map((c) => {
                           const Icon = c.icon;
@@ -495,17 +496,16 @@ export default function GroupsPage() {
       <AlertDialog open={!!removeDialogGroup} onOpenChange={(open) => { if (!open) setRemoveDialogGroup(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover grupo?</AlertDialogTitle>
+            <AlertDialogTitle>{t("groups.removeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              O grupo "{removeDialogGroup?.name}" será removido e seus membros desvinculados. 
-              Essa ação não pode ser desfeita.
+              {t("groups.removeDescription", { name: removeDialogGroup?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removing}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={removing}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleRemoveGroup} disabled={removing} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {removing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Remover
+              {t("common.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -515,14 +515,14 @@ export default function GroupsPage() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Adicionar grupo</DialogTitle>
+            <DialogTitle>{t("groups.addGroupTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Selecione uma ideia para criar um novo grupo ({groups.length}/{MAX_GROUPS}).
+            {t("groups.addGroupDescription", { current: groups.length, max: MAX_GROUPS })}
           </p>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {unselectedIdeas.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">Todas as ideias já possuem grupo.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{t("groups.allIdeasHaveGroups")}</p>
             ) : (
               unselectedIdeas.map((idea) => (
                 <div key={idea.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-primary/40 transition-all">
@@ -538,7 +538,7 @@ export default function GroupsPage() {
                     disabled={adding === idea.id || groups.length >= MAX_GROUPS}
                   >
                     {adding === idea.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-                    Adicionar
+                    {t("common.add")}
                   </Button>
                 </div>
               ))
@@ -551,17 +551,16 @@ export default function GroupsPage() {
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar {groups.length} grupos?</AlertDialogTitle>
+            <AlertDialogTitle>{t("groups.confirmTitle", { count: groups.length })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Após a confirmação, os participantes poderão entrar nos grupos (quando "Entrada nos grupos" estiver ativa).
-              Você poderá continuar gerenciando os grupos depois.
+              {t("groups.confirmDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={confirming}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={confirming}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmGroups} disabled={confirming}>
               {confirming && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmar
+              {t("common.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

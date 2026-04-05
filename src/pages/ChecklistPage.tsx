@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, ClipboardCheck, Loader2, Lock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Criterion {
   id: string;
@@ -28,6 +29,7 @@ interface Entry {
 }
 
 export default function ChecklistPage() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [entries, setEntries] = useState<Map<string, Entry>>(new Map());
@@ -37,7 +39,6 @@ export default function ChecklistPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Local state for toggles and notes
   const [toggles, setToggles] = useState<Map<string, boolean>>(new Map());
   const [notes, setNotes] = useState<Map<string, string>>(new Map());
 
@@ -50,7 +51,7 @@ export default function ChecklistPage() {
       .from("weeks").select("id, number, title").eq("is_active", true).maybeSingle();
     if (!week) { setLoading(false); return; }
 
-    setWeekTitle(`Semana ${week.number} — ${week.title}`);
+    setWeekTitle(`${t("common.week")} ${week.number} — ${week.title}`);
     setWeekId(week.id);
 
     const [criteriaRes, entriesRes] = await Promise.all([
@@ -80,7 +81,7 @@ export default function ChecklistPage() {
     setNotes(nMap.size > 0 ? nMap : new Map(crit.map((c) => [c.id, ""])));
     setSubmitted(entryMap.size > 0);
     setLoading(false);
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -111,18 +112,18 @@ export default function ChecklistPage() {
           await supabase.from("checklist_entries").insert(payload);
         }
       }
-      toast({ title: `Checklist enviado! ${totalPoints}/${maxPoints} pontos` });
+      toast({ title: t("checklist.toastSuccess", { points: totalPoints, max: maxPoints }) });
       setSubmitted(true);
       await load();
     } catch (err: any) {
-      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+      toast({ title: t("checklist.toastError"), description: err.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <DashboardLayout title="Checklist da Semana">
+    <DashboardLayout title={t("checklist.title")}>
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -134,11 +135,11 @@ export default function ChecklistPage() {
         </div>
       ) : !weekId ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhuma semana ativa no momento.
+          {t("checklist.noActiveWeek")}
         </div>
       ) : criteria.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhum critério definido para esta semana.
+          {t("checklist.noCriteria")}
         </div>
       ) : (
         <>
@@ -146,7 +147,7 @@ export default function ChecklistPage() {
             <Badge className="bg-primary text-primary-foreground text-sm px-3 py-1">{weekTitle}</Badge>
             <div className="flex-1" />
             <div className="text-sm text-foreground font-medium">
-              {totalPoints}/{maxPoints} pontos
+              {totalPoints}/{maxPoints} {t("common.points")}
             </div>
           </div>
 
@@ -166,7 +167,7 @@ export default function ChecklistPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="text-sm text-foreground font-medium">{criterion.description}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{criterion.points} pontos</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{criterion.points} {t("common.points")}</p>
                     </div>
                     {isRepresentante && !submitted ? (
                       <Switch
@@ -175,13 +176,13 @@ export default function ChecklistPage() {
                       />
                     ) : (
                       <Badge className={cn("text-xs", checked ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground")}>
-                        {checked ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Cumprido</> : "Não cumprido"}
+                        {checked ? <><CheckCircle2 className="h-3 w-3 mr-1" /> {t("checklist.done")}</> : t("checklist.notDone")}
                       </Badge>
                     )}
                   </div>
                   {isRepresentante && !submitted ? (
                     <Textarea
-                      placeholder="Observação (opcional)"
+                      placeholder={t("checklist.notePlaceholder")}
                       value={note}
                       onChange={(e) => setNotes((prev) => new Map(prev).set(criterion.id, e.target.value))}
                       rows={2}
@@ -200,12 +201,12 @@ export default function ChecklistPage() {
               {submitted ? (
                 <div className="glass-card p-4 flex items-center gap-2 text-primary">
                   <Lock className="h-4 w-4" />
-                  <span className="text-sm">Checklist enviado. Somente o admin pode reabrir.</span>
+                  <span className="text-sm">{t("checklist.submittedMessage")}</span>
                 </div>
               ) : (
                 <Button onClick={handleSubmit} disabled={submitting} className="w-full gap-1.5">
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  <ClipboardCheck className="h-4 w-4" /> Submeter checklist ({totalPoints}/{maxPoints} pts)
+                  <ClipboardCheck className="h-4 w-4" /> {t("checklist.submitButton", { points: totalPoints, max: maxPoints })}
                 </Button>
               )}
             </div>

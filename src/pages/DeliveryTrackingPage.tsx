@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle, CheckCircle2, Clock, ExternalLink, FileText, Loader2, MessageSquare, Send, Trophy,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Activity {
   id: string;
@@ -64,6 +65,7 @@ const CELL_STYLES: Record<CellStatus, string> = {
 };
 
 export default function DeliveryTrackingPage() {
+  const { t } = useTranslation();
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -71,7 +73,6 @@ export default function DeliveryTrackingPage() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Detail sheet
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
@@ -122,7 +123,7 @@ export default function DeliveryTrackingPage() {
     if (!selectedDelivery) return;
     const parsedScore = score.trim() === "" ? null : parseInt(score, 10);
     if (parsedScore !== null && (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100)) {
-      toast({ title: "Nota deve ser entre 0 e 100", variant: "destructive" }); return;
+      toast({ title: t("deliveryTracking.toastScoreInvalid"), variant: "destructive" }); return;
     }
     setSavingFeedback(true);
     const { error } = await supabase
@@ -130,9 +131,9 @@ export default function DeliveryTrackingPage() {
       .update({ admin_feedback: feedback.trim() || null, admin_score: parsedScore })
       .eq("id", selectedDelivery.id);
     if (error) {
-      toast({ title: "Erro ao salvar avaliação", description: error.message, variant: "destructive" });
+      toast({ title: t("deliveryTracking.toastSaveError"), description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Avaliação salva" });
+      toast({ title: t("deliveryTracking.toastSaved") });
       setSelectedDelivery((prev) => prev ? { ...prev, admin_feedback: feedback.trim() || null, admin_score: parsedScore } : prev);
       await loadData();
     }
@@ -142,19 +143,21 @@ export default function DeliveryTrackingPage() {
   const hasLateDelivery = (groupId: string) =>
     activities.some((a) => getCellStatus(a, getDelivery(a.id, groupId)) === "atrasado");
 
-  const selectedWeek = weeks.find((w) => w.id === selectedWeekId);
-
   return (
-    <DashboardLayout title="Acompanhamento de Entregas">
+    <DashboardLayout title={t("deliveryTracking.title")}>
       <div className="flex items-center gap-3 mb-6">
         <Select value={selectedWeekId} onValueChange={setSelectedWeekId}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Selecionar semana" />
+            <SelectValue placeholder={t("deliveryTracking.selectWeek")} />
           </SelectTrigger>
           <SelectContent>
             {weeks.map((w) => (
               <SelectItem key={w.id} value={w.id}>
-                Semana {w.number} — {w.title} {w.is_active ? "(Ativa)" : ""}
+                {t("deliveryTracking.weekOption", {
+                  number: w.number,
+                  title: w.title,
+                  active: w.is_active ? t("deliveryTracking.weekActive") : "",
+                })}
               </SelectItem>
             ))}
           </SelectContent>
@@ -168,11 +171,11 @@ export default function DeliveryTrackingPage() {
         </div>
       ) : activities.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhuma atividade nesta semana.
+          {t("deliveryTracking.noActivities")}
         </div>
       ) : groups.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhum grupo cadastrado.
+          {t("deliveryTracking.noGroups")}
         </div>
       ) : (
         <div className="glass-card overflow-hidden">
@@ -181,13 +184,13 @@ export default function DeliveryTrackingPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground sticky left-0 bg-card z-10">
-                    Grupo
+                    {t("deliveryTracking.colGroup")}
                   </th>
                   {activities.map((a) => (
                     <th key={a.id} className="text-center px-3 py-3 font-medium text-muted-foreground min-w-[120px]">
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-xs">{a.title}</span>
-                        {a.is_required && <Badge variant="destructive" className="text-[10px] px-1">Obrig.</Badge>}
+                        {a.is_required && <Badge variant="destructive" className="text-[10px] px-1">{t("deliveryTracking.colRequired")}</Badge>}
                       </div>
                     </th>
                   ))}
@@ -228,7 +231,11 @@ export default function DeliveryTrackingPage() {
                               {status === "entregue" && <CheckCircle2 className="h-3 w-3" />}
                               {status === "pendente" && <Clock className="h-3 w-3" />}
                               {status === "atrasado" && <AlertTriangle className="h-3 w-3" />}
-                              {status === "entregue" ? (delivery?.admin_score != null ? `${delivery.admin_score}pts` : "Entregue") : status === "pendente" ? "Pendente" : "Atrasado"}
+                              {status === "entregue"
+                                ? (delivery?.admin_score != null ? t("deliveryTracking.points", { score: delivery.admin_score }) : t("deliveryTracking.statusDelivered"))
+                                : status === "pendente"
+                                ? t("deliveryTracking.statusPending")
+                                : t("deliveryTracking.statusLate")}
                             </button>
                           </td>
                         );
@@ -253,7 +260,7 @@ export default function DeliveryTrackingPage() {
 
           <div className="mt-4 space-y-4">
             <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Atividade</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("deliveryTracking.sheetActivity")}</p>
               <p className="text-sm text-foreground font-medium mt-1">{selectedActivity?.title}</p>
               <p className="text-xs text-muted-foreground mt-1">{selectedActivity?.description}</p>
             </div>
@@ -261,9 +268,9 @@ export default function DeliveryTrackingPage() {
             {selectedDelivery ? (
               <>
                 <div className="border-t border-border pt-4 space-y-3">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Entrega</p>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("deliveryTracking.sheetDelivery")}</p>
                   <p className="text-xs text-muted-foreground">
-                    Enviada em {selectedDelivery.submitted_at ? format(new Date(selectedDelivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—"}
+                    {t("deliveryTracking.sheetSentAt", { date: selectedDelivery.submitted_at ? format(new Date(selectedDelivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—" })}
                   </p>
 
                   {selectedDelivery.content_text && (
@@ -290,7 +297,7 @@ export default function DeliveryTrackingPage() {
                       rel="noreferrer"
                       className="text-sm text-primary hover:underline flex items-center gap-1"
                     >
-                      <FileText className="h-3.5 w-3.5" /> Ver arquivo
+                      <FileText className="h-3.5 w-3.5" /> {t("deliveryTracking.sheetViewFile")}
                     </a>
                   )}
                 </div>
@@ -300,26 +307,26 @@ export default function DeliveryTrackingPage() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Trophy className="h-3.5 w-3.5 text-primary" />
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Nota (0–100)</p>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("deliveryTracking.sheetScoreLabel")}</p>
                     </div>
                     <Input type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} placeholder="Ex: 85" className="w-32" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Feedback do Admin</p>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("deliveryTracking.sheetFeedbackLabel")}</p>
                     </div>
-                    <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Escreva seu feedback..." rows={4} />
+                    <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder={t("deliveryTracking.sheetFeedbackPlaceholder")} rows={4} />
                   </div>
                   <Button size="sm" onClick={handleSaveFeedback} disabled={savingFeedback} className="gap-1">
                     {savingFeedback && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    <Send className="h-3.5 w-3.5" /> Salvar avaliação
+                    <Send className="h-3.5 w-3.5" /> {t("deliveryTracking.sheetSaveEvaluation")}
                   </Button>
                 </div>
               </>
             ) : (
               <div className="border-t border-border pt-4">
-                <p className="text-sm text-muted-foreground">Nenhuma entrega realizada por este grupo.</p>
+                <p className="text-sm text-muted-foreground">{t("deliveryTracking.noDelivery")}</p>
               </div>
             )}
           </div>

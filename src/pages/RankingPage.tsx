@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface Week { id: string; number: number; title: string }
 
@@ -18,6 +19,7 @@ interface GroupRank {
 }
 
 export default function RankingPage() {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<GroupRank[]>([]);
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,6 @@ export default function RankingPage() {
       const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
       const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
 
-      // Tiebreak: use group name alphabetically (no submitted_at in scores view)
       const earliestMap = new Map<string, string>();
 
       const ranked: GroupRank[] = allGroups.map((g) => {
@@ -54,7 +55,6 @@ export default function RankingPage() {
         let checklistTotal = 0;
         let deliveryTotal = 0;
 
-        // Checklist points
         allEntries.forEach((e) => {
           if (e.group_id === g.id && e.completed && e.criterion_id) {
             const crit = criterionMap.get(e.criterion_id);
@@ -69,7 +69,6 @@ export default function RankingPage() {
           }
         });
 
-        // Delivery scores
         allDeliveries.forEach((d) => {
           if (d.group_id === g.id && d.admin_score != null && d.admin_score > 0) {
             deliveryTotal += d.admin_score;
@@ -109,7 +108,7 @@ export default function RankingPage() {
   const PODIUM_ICONS = [Trophy, Medal, Award];
 
   return (
-    <DashboardLayout title="Ranking de Grupos">
+    <DashboardLayout title={t("ranking.title")}>
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -125,7 +124,7 @@ export default function RankingPage() {
       ) : groups.length === 0 ? (
         <div className="glass-card p-12 flex flex-col items-center text-center space-y-3">
           <Trophy className="h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">Nenhum grupo cadastrado ainda.</p>
+          <p className="text-muted-foreground">{t("ranking.noGroups")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -166,15 +165,15 @@ export default function RankingPage() {
                   </div>
                   {(group.checklistPoints > 0 || group.deliveryPoints > 0) && (
                     <div className="flex gap-3 mt-0.5">
-                      {group.checklistPoints > 0 && <span className="text-[10px] text-muted-foreground">Checklist: {group.checklistPoints}</span>}
-                      {group.deliveryPoints > 0 && <span className="text-[10px] text-primary">Notas: {group.deliveryPoints}</span>}
+                      {group.checklistPoints > 0 && <span className="text-[10px] text-muted-foreground">{t("ranking.checklistPoints", { points: group.checklistPoints })}</span>}
+                      {group.deliveryPoints > 0 && <span className="text-[10px] text-primary">{t("ranking.deliveryPoints", { points: group.deliveryPoints })}</span>}
                     </div>
                   )}
                 </div>
 
                 <div className="text-right shrink-0">
                   <p className="text-lg font-bold text-foreground">{group.totalPoints}</p>
-                  <p className="text-xs text-muted-foreground">pontos</p>
+                  <p className="text-xs text-muted-foreground">{t("common.points")}</p>
                 </div>
               </div>
             );

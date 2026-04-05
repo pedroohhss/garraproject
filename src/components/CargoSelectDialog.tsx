@@ -5,6 +5,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock, Crown, Target, Wrench, Handshake, BarChart3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface CargoInfo {
   value: string;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, onConfirm, groupName }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -50,7 +52,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setSelected(null); } onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Escolha seu cargo — {groupName}</DialogTitle>
+          <DialogTitle>{t("cargo.dialogTitle", { groupName })}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 pt-2">
           {CARGOS.map((cargo) => {
@@ -76,9 +78,9 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{cargo.label}</span>
                     {cargo.required ? (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0">Obrigatório</Badge>
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0">{t("common.required")}</Badge>
                     ) : (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Opcional</Badge>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t("common.optional")}</Badge>
                     )}
                     {occupied && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                   </div>
@@ -91,7 +93,7 @@ export default function CargoSelectDialog({ open, onOpenChange, occupiedCargos, 
         <DialogFooter>
           <Button onClick={handleConfirm} disabled={!selected || saving} className="w-full">
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Confirmar entrada
+            {t("cargo.confirmEntry")}
           </Button>
         </DialogFooter>
       </DialogContent>

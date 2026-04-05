@@ -5,6 +5,7 @@ import { Users, Layers, Calendar, UserCheck, Settings2, AlertTriangle, CheckCirc
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface Stats {
   participants: number;
@@ -36,18 +37,19 @@ interface GroupRow {
 const MAX_PARTICIPANTS = 75;
 const REQUIRED_CARGOS = ["fundador", "estrategista", "construtor"];
 
-const TOGGLE_ITEMS: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] = [
-  { key: "registration_open", label: "Cadastro aberto" },
-  { key: "ideas_open", label: "Cadastro de ideias" },
-  { key: "voting_open", label: "Votação" },
-  { key: "joining_open", label: "Entrada nos grupos" },
-];
-
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
   const [config, setConfig] = useState<ChallengeConfig | null>(null);
   const [groups, setGroups] = useState<GroupRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const TOGGLE_ITEMS: { key: keyof Omit<ChallengeConfig, "id">; label: string }[] = [
+    { key: "registration_open", label: t("dashboard.admin.openRegistration") },
+    { key: "ideas_open", label: t("dashboard.admin.ideaRegistration") },
+    { key: "voting_open", label: t("dashboard.admin.voting") },
+    { key: "joining_open", label: t("dashboard.admin.groupEntry") },
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -86,7 +88,6 @@ export default function AdminDashboard() {
         const rawGroups = groupsRes.data ?? [];
         const allMembers = (membersRes.data ?? []) as { group_id: string; user_id: string; cargo: string }[];
 
-        // Members per group
         const membersByGroup = new Map<string, { user_id: string; cargo: string }[]>();
         allMembers.forEach((m) => {
           const list = membersByGroup.get(m.group_id) ?? [];
@@ -94,7 +95,6 @@ export default function AdminDashboard() {
           membersByGroup.set(m.group_id, list);
         });
 
-        // Enrich groups with user names
         if (rawGroups.length > 0) {
           const userIds = [
             ...rawGroups.map((g) => g.representative_id),
@@ -140,7 +140,6 @@ export default function AdminDashboard() {
   const createGroupsFromTopIdeas = useCallback(async () => {
     setCreatingGroups(true);
     try {
-      // Fetch ideas + votes
       const [ideasRes, votesRes] = await Promise.all([
         supabase.from("ideas").select("id, title, created_by"),
         supabase.from("votes").select("idea_id, quantity"),
@@ -148,7 +147,6 @@ export default function AdminDashboard() {
       const allIdeas = ideasRes.data ?? [];
       const allVotes = votesRes.data ?? [];
 
-      // Sum votes per idea
       const voteSumMap = new Map<string, number>();
       allVotes.forEach((v) => {
         if (v.idea_id) {
@@ -161,26 +159,23 @@ export default function AdminDashboard() {
         .sort((a, b) => b.totalVotes - a.totalVotes);
 
       if (ranked.length === 0) {
-        toast({ title: "Nenhuma ideia para formar grupos", variant: "destructive" });
+        toast({ title: t("dashboard.admin.noIdeasForGroups"), variant: "destructive" });
         return;
       }
 
-      // Determine top 15, handling ties
       const MAX = 15;
       let selected = ranked.slice(0, MAX);
       const cutoffScore = selected.length === MAX ? selected[MAX - 1].totalVotes : -1;
       const tiedBeyond = ranked.slice(MAX).filter((i) => i.totalVotes === cutoffScore && cutoffScore > 0);
 
       if (tiedBeyond.length > 0) {
-        // Include all tied ideas
         selected = [...selected, ...tiedBeyond];
         toast({
-          title: "⚠️ Empate detectado",
-          description: `Há ideias empatadas com ${cutoffScore} pts na posição de corte. ${selected.length} grupos foram criados. Resolva manualmente se necessário.`,
+          title: t("dashboard.admin.tieDetected"),
+          description: t("dashboard.admin.tieDescription", { cutoffScore, selected: selected.length }),
         });
       }
 
-      // Create groups
       for (const idea of selected) {
         const { data: group, error: groupErr } = await supabase
           .from("groups")
@@ -199,19 +194,18 @@ export default function AdminDashboard() {
         }
       }
 
-      // Set groups_confirmed = true
       const { data: cfgData } = await supabase.from("challenge_config").select("id").limit(1).single();
       if (cfgData) {
         await supabase.from("challenge_config").update({ groups_confirmed: true }).eq("id", cfgData.id);
       }
 
-      toast({ title: `${selected.length} grupos criados com sucesso!` });
+      toast({ title: t("dashboard.admin.groupsCreated", { count: selected.length }) });
     } catch (err: any) {
-      toast({ title: "Erro ao criar grupos", description: err.message, variant: "destructive" });
+      toast({ title: t("dashboard.admin.errorCreatingGroups"), description: err.message, variant: "destructive" });
     } finally {
       setCreatingGroups(false);
     }
-  }, [config]);
+  }, [config, t]);
 
   const handleToggle = useCallback(
     async (key: keyof Omit<ChallengeConfig, "id">, value: boolean) => {
@@ -223,31 +217,29 @@ export default function AdminDashboard() {
         .eq("id", config.id);
       if (error) {
         setConfig((prev) => (prev ? { ...prev, [key]: !value } : prev));
-        toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        toast({ title: t("dashboard.admin.errorUpdating"), description: error.message, variant: "destructive" });
         return;
       }
 
-      // Auto-create groups when voting_open toggled OFF
       if (key === "voting_open" && value === false) {
-        // Check if groups already exist before creating
         const { count } = await supabase.from("groups").select("id", { count: "exact", head: true });
         if ((count ?? 0) === 0) {
           await createGroupsFromTopIdeas();
         }
       }
     },
-    [config, createGroupsFromTopIdeas]
+    [config, createGroupsFromTopIdeas, t]
   );
 
   const cards = [
-    { label: "Participantes", value: stats?.participants ?? 0, icon: Users },
-    { label: "Grupos", value: stats?.groups ?? 0, icon: Layers },
-    { label: "Semana Ativa", value: stats?.activeWeekNumber != null ? `Semana ${stats.activeWeekNumber}` : "—", icon: Calendar },
-    { label: "Vagas Restantes", value: stats?.spotsLeft ?? MAX_PARTICIPANTS, icon: UserCheck },
+    { label: t("dashboard.admin.participants"), value: stats?.participants ?? 0, icon: Users },
+    { label: t("dashboard.admin.groups"), value: stats?.groups ?? 0, icon: Layers },
+    { label: t("dashboard.admin.activeWeek"), value: stats?.activeWeekNumber != null ? `${t("common.week")} ${stats.activeWeekNumber}` : "—", icon: Calendar },
+    { label: t("dashboard.admin.remainingSlots"), value: stats?.spotsLeft ?? MAX_PARTICIPANTS, icon: UserCheck },
   ];
 
   return (
-    <DashboardLayout title="Painel Admin">
+    <DashboardLayout title={t("dashboard.admin.title")}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
           <div key={card.label} className="glass-card p-6 space-y-3">
@@ -267,7 +259,7 @@ export default function AdminDashboard() {
       <div className="mt-6 glass-card p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <Settings2 className="h-4 w-4 text-primary" />
-          <span className="section-label">Controle do Desafio</span>
+          <span className="section-label">{t("dashboard.admin.challengeControl")}</span>
         </div>
         {loading || !config ? (
           <div className="space-y-4">
@@ -283,7 +275,7 @@ export default function AdminDashboard() {
                   <span className="text-sm text-foreground">{item.label}</span>
                   {item.key === "voting_open" && creatingGroups && (
                     <span className="flex items-center gap-1 text-xs text-primary">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Criando grupos...
+                      <Loader2 className="h-3 w-3 animate-spin" /> {t("dashboard.admin.creatingGroups")}
                     </span>
                   )}
                 </div>
@@ -302,7 +294,7 @@ export default function AdminDashboard() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Layers className="h-4 w-4 text-primary" />
-            <span className="section-label">Todos os Grupos</span>
+            <span className="section-label">{t("dashboard.admin.allGroups")}</span>
           </div>
         </div>
         {loading ? (
@@ -314,16 +306,16 @@ export default function AdminDashboard() {
         ) : groups.length === 0 ? (
           <div className="p-8 flex flex-col items-center justify-center text-center space-y-3">
             <Layers className="h-8 w-8 text-muted-foreground" />
-            <p className="text-muted-foreground">Nenhum grupo cadastrado ainda.</p>
+            <p className="text-muted-foreground">{t("dashboard.admin.noGroupsYet")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="text-left px-4 py-3 font-medium">Nome</th>
-                  <th className="text-left px-4 py-3 font-medium">Membros</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("dashboard.admin.title")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("dashboard.admin.members")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("dashboard.admin.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -334,12 +326,12 @@ export default function AdminDashboard() {
                     <td className="px-4 py-3">
                       {group.missingRequired.length === 0 ? (
                         <Badge variant="default" className="gap-1 text-xs">
-                          <CheckCircle2 className="h-3 w-3" /> Completo
+                          <CheckCircle2 className="h-3 w-3" /> {t("dashboard.admin.complete")}
                         </Badge>
                       ) : (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant="destructive" className="gap-1 text-xs">
-                            <AlertTriangle className="h-3 w-3" /> Falta: {group.missingRequired.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}
+                            <AlertTriangle className="h-3 w-3" /> {t("dashboard.admin.missing", { roles: group.missingRequired.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ") })}
                           </Badge>
                         </div>
                       )}

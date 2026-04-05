@@ -16,11 +16,13 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ClipboardCheck, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Week { id: string; number: number; title: string; is_active: boolean }
 interface Criterion { id: string; week_id: string | null; description: string | null; points: number | null }
 
 export default function AdminChecklistPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState("");
@@ -85,7 +87,7 @@ export default function AdminChecklistPage() {
 
   const handleSave = async () => {
     if (!formDesc.trim() || !formPoints.trim()) {
-      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      toast({ title: t("common.fillAllFields"), variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -95,19 +97,19 @@ export default function AdminChecklistPage() {
           description: formDesc.trim(),
           points: parseInt(formPoints),
         }).eq("id", editing.id);
-        toast({ title: "Critério atualizado" });
+        toast({ title: t("adminChecklist.toastUpdated") });
       } else {
         await supabase.from("checklist_criteria").insert({
           week_id: selectedWeekId,
           description: formDesc.trim(),
           points: parseInt(formPoints),
         });
-        toast({ title: "Critério criado" });
+        toast({ title: t("adminChecklist.toastCreated") });
       }
       setDialogOpen(false);
       await loadCriteria();
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -117,9 +119,9 @@ export default function AdminChecklistPage() {
     if (!deleteTarget) return;
     const { error } = await supabase.from("checklist_criteria").delete().eq("id", deleteTarget.id);
     if (error) {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      toast({ title: t("common.errorDeleting"), description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Critério excluído" });
+      toast({ title: t("adminChecklist.toastDeleted") });
       await loadCriteria();
     }
     setDeleteTarget(null);
@@ -128,16 +130,18 @@ export default function AdminChecklistPage() {
   const maxPoints = criteria.reduce((s, c) => s + (c.points ?? 0), 0);
 
   return (
-    <DashboardLayout title="Gerenciar Checklist">
+    <DashboardLayout title={t("adminChecklist.title")}>
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Select value={selectedWeekId} onValueChange={setSelectedWeekId}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Selecionar semana" />
+            <SelectValue placeholder={t("adminChecklist.selectWeek")} />
           </SelectTrigger>
           <SelectContent>
             {weeks.map((w) => (
               <SelectItem key={w.id} value={w.id}>
-                Semana {w.number} — {w.title} {w.is_active ? "(Ativa)" : ""}
+                {w.is_active 
+                  ? t("adminChecklist.weekOption", { number: w.number, title: w.title })
+                  : t("adminChecklist.weekOptionInactive", { number: w.number, title: w.title })}
               </SelectItem>
             ))}
           </SelectContent>
@@ -146,15 +150,17 @@ export default function AdminChecklistPage() {
         <div className="flex-1" />
 
         {criteria.length > 0 && (
-          <span className="text-sm text-muted-foreground">{criteria.length} critérios · {maxPoints} pts máx</span>
+          <span className="text-sm text-muted-foreground">
+            {t("adminChecklist.criteriaCount", { count: criteria.length, max: maxPoints })}
+          </span>
         )}
 
         <Button size="sm" variant="outline" onClick={() => navigate("/admin/checklist/acompanhamento")} className="gap-1.5">
-          <ClipboardCheck className="h-4 w-4" /> Acompanhamento
+          <ClipboardCheck className="h-4 w-4" /> {t("adminChecklist.tracking")}
         </Button>
 
         <Button size="sm" onClick={openCreate} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Novo critério
+          <Plus className="h-4 w-4" /> {t("adminChecklist.newCriterion")}
         </Button>
       </div>
 
@@ -169,7 +175,7 @@ export default function AdminChecklistPage() {
         </div>
       ) : criteria.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhum critério definido para esta semana. Clique em "Novo critério" para começar.
+          {t("adminChecklist.noCriteria")}
         </div>
       ) : (
         <div className="space-y-3">
@@ -179,15 +185,17 @@ export default function AdminChecklistPage() {
               <div key={c.id} className="glass-card p-4 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{c.description}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{c.points} pontos</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t("common.points", { points: c.points })}
+                  </p>
                 </div>
                 {locked && (
                   <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">
-                    Tem entregas
+                    {t("adminChecklist.hasDeliveries")}
                   </Badge>
                 )}
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)} title="Editar">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)} title={t("common.edit")}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
@@ -195,7 +203,7 @@ export default function AdminChecklistPage() {
                     size="icon"
                     onClick={() => setDeleteTarget(c)}
                     disabled={locked}
-                    title={locked ? "Não pode excluir — já tem entregas" : "Excluir"}
+                    title={locked ? t("adminChecklist.cannotDelete") : t("common.delete")}
                     className={cn(locked && "opacity-40")}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -211,33 +219,33 @@ export default function AdminChecklistPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar critério" : "Novo critério"}</DialogTitle>
+            <DialogTitle>{editing ? t("adminChecklist.editCriterion") : t("adminChecklist.newCriterion")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição</label>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">{t("adminChecklist.fieldDescription")}</label>
               <Input
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Ex: BMC preenchido e entregue"
+                placeholder={t("adminChecklist.descriptionPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Pontos</label>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">{t("adminChecklist.fieldPoints")}</label>
               <Input
                 type="number"
                 value={formPoints}
                 onChange={(e) => setFormPoints(e.target.value)}
-                placeholder="10"
+                placeholder={t("adminChecklist.pointsPlaceholder")}
                 min={1}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleSave} disabled={saving} className="gap-1.5">
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editing ? "Salvar" : "Criar"}
+              {editing ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -247,14 +255,14 @@ export default function AdminChecklistPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir critério?</AlertDialogTitle>
+            <AlertDialogTitle>{t("adminChecklist.deleteCriterionTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              "{deleteTarget?.description}" será removido permanentemente.
+              {t("adminChecklist.deleteCriterionDescription", { description: deleteTarget?.description })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

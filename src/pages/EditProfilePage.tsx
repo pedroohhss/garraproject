@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Save, Upload, User, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
@@ -49,6 +50,7 @@ const EMPTY_FORM: FormData = {
 };
 
 export default function EditProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
@@ -101,7 +103,7 @@ export default function EditProfilePage() {
         return { ...prev, cargos_aptos: current.filter((c) => c !== cargo) };
       }
       if (current.length >= 2) {
-        toast({ title: "Máximo de 2 cargos", variant: "destructive" });
+        toast({ title: t("editProfile.rolesMax"), variant: "destructive" });
         return prev;
       }
       return { ...prev, cargos_aptos: [...current, cargo] };
@@ -112,11 +114,11 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      toast({ title: "Apenas JPG e PNG são aceitos", variant: "destructive" });
+      toast({ title: t("editProfile.errorOnlyJpgPng"), variant: "destructive" });
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Imagem deve ter no máximo 2MB", variant: "destructive" });
+      toast({ title: t("editProfile.errorImageTooBig"), variant: "destructive" });
       return;
     }
     setAvatarFile(file);
@@ -132,14 +134,13 @@ export default function EditProfilePage() {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) {
-      toast({ title: "Nome completo é obrigatório", variant: "destructive" });
+      toast({ title: t("editProfile.errorNameRequired"), variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
       let avatarUrl = form.avatar_url.trim() || null;
 
-      // Upload avatar if new file selected
       if (avatarFile) {
         setUploadingAvatar(true);
         const ext = avatarFile.name.split(".").pop() ?? "jpg";
@@ -174,10 +175,10 @@ export default function EditProfilePage() {
         } as any)
         .eq("id", user.id);
       if (error) throw error;
-      toast({ title: "Perfil atualizado!" });
+      toast({ title: t("editProfile.successSaved") });
       navigate(`/perfil/${user.id}`);
     } catch (err: any) {
-      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+      toast({ title: t("editProfile.errorSaving"), description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -185,7 +186,7 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Editar Perfil">
+      <DashboardLayout title={t("editProfile.title")}>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -194,40 +195,40 @@ export default function EditProfilePage() {
   }
 
   return (
-    <DashboardLayout title="Editar Perfil">
+    <DashboardLayout title={t("editProfile.title")}>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Informações Pessoais */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Informações Pessoais</p>
+          <p className="section-label">{t("editProfile.personalInfo")}</p>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nome completo *</Label>
+              <Label className="text-xs">{t("editProfile.fullName")}</Label>
               <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} maxLength={100} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Bio</Label>
-              <Textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} maxLength={500} rows={3} placeholder="Conte um pouco sobre você..." />
+              <Label className="text-xs">{t("editProfile.bio")}</Label>
+              <Textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} maxLength={500} rows={3} placeholder={t("editProfile.bioPlaceholder")} />
               <p className="text-[10px] text-muted-foreground text-right">{form.bio.length}/500</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Sexo</Label>
+                <Label className="text-xs">{t("editProfile.gender")}</Label>
                 <Select value={form.sexo || undefined} onValueChange={(v) => set("sexo", v)}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("editProfile.select")} /></SelectTrigger>
                   <SelectContent>
                     {SEXO_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Idade</Label>
+                <Label className="text-xs">{t("editProfile.age")}</Label>
                 <Input type="number" min={10} max={99} value={form.idade} onChange={(e) => set("idade", e.target.value)} placeholder="Ex: 25" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Estado civil</Label>
+              <Label className="text-xs">{t("editProfile.maritalStatus")}</Label>
               <Select value={form.estado_civil || undefined} onValueChange={(v) => set("estado_civil", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("editProfile.select")} /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_CIVIL_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
@@ -238,68 +239,68 @@ export default function EditProfilePage() {
 
         {/* Localização */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Localização</p>
+          <p className="section-label">{t("editProfile.location")}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Estado</Label>
+              <Label className="text-xs">{t("editProfile.state")}</Label>
               <Select value={form.estado || undefined} onValueChange={(v) => set("estado", v)}>
-                <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("editProfile.stateAbbr")} /></SelectTrigger>
                 <SelectContent>
                   {ESTADOS_BR.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Cidade</Label>
-              <Input value={form.cidade} onChange={(e) => set("cidade", e.target.value)} maxLength={100} placeholder="Ex: São Paulo" />
+              <Label className="text-xs">{t("editProfile.city")}</Label>
+              <Input value={form.cidade} onChange={(e) => set("cidade", e.target.value)} maxLength={100} placeholder={t("editProfile.cityPlaceholder")} />
             </div>
           </div>
         </div>
 
         {/* Profissional */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Profissional</p>
+          <p className="section-label">{t("editProfile.professional")}</p>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Com o que trabalha ou estuda</Label>
-              <Input value={form.trabalho_estudo} onChange={(e) => set("trabalho_estudo", e.target.value)} maxLength={150} placeholder="Ex: Estudante de Engenharia" />
+              <Label className="text-xs">{t("editProfile.workStudy")}</Label>
+              <Input value={form.trabalho_estudo} onChange={(e) => set("trabalho_estudo", e.target.value)} maxLength={150} placeholder={t("editProfile.workStudyPlaceholder")} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Habilidades</Label>
-              <Input value={form.habilidades} onChange={(e) => set("habilidades", e.target.value)} maxLength={300} placeholder="Separadas por vírgula: Design, Marketing, Python" />
+              <Label className="text-xs">{t("editProfile.skills")}</Label>
+              <Input value={form.habilidades} onChange={(e) => set("habilidades", e.target.value)} maxLength={300} placeholder={t("editProfile.skillsPlaceholder")} />
             </div>
           </div>
         </div>
 
         {/* Objetivos */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Objetivos</p>
+          <p className="section-label">{t("editProfile.goals")}</p>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Objetivo de curto prazo</Label>
-              <Textarea value={form.objetivos_curto_prazo} onChange={(e) => set("objetivos_curto_prazo", e.target.value)} maxLength={300} rows={2} placeholder="O que quer alcançar nos próximos meses?" />
+              <Label className="text-xs">{t("editProfile.shortTermGoal")}</Label>
+              <Textarea value={form.objetivos_curto_prazo} onChange={(e) => set("objetivos_curto_prazo", e.target.value)} maxLength={300} rows={2} placeholder={t("editProfile.shortTermGoalPlaceholder")} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Objetivo de longo prazo</Label>
-              <Textarea value={form.objetivos_longo_prazo} onChange={(e) => set("objetivos_longo_prazo", e.target.value)} maxLength={300} rows={2} placeholder="Onde quer chegar em 3-5 anos?" />
+              <Label className="text-xs">{t("editProfile.longTermGoal")}</Label>
+              <Textarea value={form.objetivos_longo_prazo} onChange={(e) => set("objetivos_longo_prazo", e.target.value)} maxLength={300} rows={2} placeholder={t("editProfile.longTermGoalPlaceholder")} />
             </div>
           </div>
         </div>
 
         {/* Redes Sociais */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Redes Sociais</p>
+          <p className="section-label">{t("editProfile.socialMedia")}</p>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Instagram</Label>
-              <Input value={form.instagram_url} onChange={(e) => set("instagram_url", e.target.value)} maxLength={200} placeholder="@seuusuario ou URL completa" />
+              <Label className="text-xs">{t("editProfile.instagram")}</Label>
+              <Input value={form.instagram_url} onChange={(e) => set("instagram_url", e.target.value)} maxLength={200} placeholder={t("editProfile.instagramPlaceholder")} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">LinkedIn</Label>
-              <Input value={form.linkedin_url} onChange={(e) => set("linkedin_url", e.target.value)} maxLength={200} placeholder="URL do perfil LinkedIn" />
+              <Label className="text-xs">{t("editProfile.linkedin")}</Label>
+              <Input value={form.linkedin_url} onChange={(e) => set("linkedin_url", e.target.value)} maxLength={200} placeholder={t("editProfile.linkedinPlaceholder")} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Foto de perfil</Label>
+              <Label className="text-xs">{t("editProfile.profilePhoto")}</Label>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden shrink-0">
                   {avatarPreview ? (
@@ -320,14 +321,14 @@ export default function EditProfilePage() {
                   />
                   <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="h-3.5 w-3.5" />
-                    {form.avatar_url || avatarPreview ? "Trocar foto" : "Enviar foto"}
+                    {form.avatar_url || avatarPreview ? t("editProfile.changePhoto") : t("editProfile.uploadPhoto")}
                   </Button>
                   {avatarPreview && (
                     <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={removeAvatarPreview}>
-                      <X className="h-3 w-3" /> Remover
+                      <X className="h-3 w-3" /> {t("editProfile.removePhoto")}
                     </Button>
                   )}
-                  <p className="text-[10px] text-muted-foreground">JPG ou PNG, máx. 2MB</p>
+                  <p className="text-[10px] text-muted-foreground">{t("editProfile.photoHint")}</p>
                 </div>
               </div>
             </div>
@@ -336,8 +337,8 @@ export default function EditProfilePage() {
 
         {/* Cargos */}
         <div className="glass-card p-5 space-y-4">
-          <p className="section-label">Cargos que melhor me representam</p>
-          <p className="text-xs text-muted-foreground">Selecione até 2 cargos.</p>
+          <p className="section-label">{t("editProfile.roles")}</p>
+          <p className="text-xs text-muted-foreground">{t("editProfile.rolesHint")}</p>
           <div className="space-y-2">
             {CARGOS.map((cargo) => {
               const Icon = cargo.icon;
@@ -366,7 +367,7 @@ export default function EditProfilePage() {
 
         <Button onClick={handleSave} disabled={saving} className="w-full gap-1.5">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Salvar Perfil
+          {t("editProfile.submit")}
         </Button>
       </div>
     </DashboardLayout>

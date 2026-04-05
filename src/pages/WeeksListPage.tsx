@@ -19,6 +19,7 @@ import {
   Calendar as CalendarIcon, CheckCircle2, ChevronRight, Loader2,
   Pencil, Play, Trophy, BookOpen, ClipboardList, PackageCheck, FileUp,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Week {
   id: string;
@@ -39,13 +40,41 @@ function getWeekStatus(week: Week, activeNumber: number | null): WeekStatus {
   return "futura";
 }
 
-const STATUS_BADGE: Record<WeekStatus, { label: string; className: string }> = {
-  futura: { label: "Futura", className: "bg-secondary text-secondary-foreground" },
-  ativa: { label: "Ativa", className: "bg-primary text-primary-foreground" },
-  encerrada: { label: "Encerrada", className: "bg-muted text-muted-foreground" },
+const DEFAULT_CRITERIA: Record<number, { description: string; points: number }[]> = {
+  1: [
+    { description: "Ideia cadastrada e votação participada", points: 10 },
+    { description: "Grupo formado com 5 membros", points: 10 },
+    { description: "Reunião de alinhamento realizada", points: 10 },
+  ],
+  2: [
+    { description: "BMC preenchido e entregue", points: 10 },
+    { description: "5 entrevistas de validação realizadas", points: 10 },
+    { description: "Hipótese principal definida", points: 10 },
+  ],
+  3: [
+    { description: "Pitch apresentado na reunião", points: 10 },
+    { description: "MVP definido com escopo claro", points: 10 },
+    { description: "Primeira versão construída", points: 10 },
+  ],
+  4: [
+    { description: "MVP testado com pessoas externas", points: 10 },
+    { description: "3 pontos de melhoria implementados", points: 10 },
+    { description: "Material de apresentação iniciado", points: 10 },
+  ],
+  5: [
+    { description: "Canal de aquisição testado", points: 10 },
+    { description: "Tentativa real de venda realizada", points: 10 },
+    { description: "Métricas registradas", points: 10 },
+  ],
+  6: [
+    { description: "Apresentação final entregue", points: 10 },
+    { description: "Carta de transformação escrita", points: 10 },
+    { description: "Próximo passo definido por cada membro", points: 10 },
+  ],
 };
 
 export default function WeeksListPage() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const navigate = useNavigate();
   const isAdmin = profile?.role === "admin";
@@ -54,7 +83,6 @@ export default function WeeksListPage() {
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Admin-only state
   const [activateTarget, setActivateTarget] = useState<Week | null>(null);
   const [activating, setActivating] = useState(false);
   const [showAdvance, setShowAdvance] = useState(false);
@@ -64,37 +92,10 @@ export default function WeeksListPage() {
   const [editForm, setEditForm] = useState({ title: "", theme: "", starts_at: null as Date | null, ends_at: null as Date | null });
   const [saving, setSaving] = useState(false);
 
-  const DEFAULT_CRITERIA: Record<number, { description: string; points: number }[]> = {
-    1: [
-      { description: "Ideia cadastrada e votação participada", points: 10 },
-      { description: "Grupo formado com 5 membros", points: 10 },
-      { description: "Reunião de alinhamento realizada", points: 10 },
-    ],
-    2: [
-      { description: "BMC preenchido e entregue", points: 10 },
-      { description: "5 entrevistas de validação realizadas", points: 10 },
-      { description: "Hipótese principal definida", points: 10 },
-    ],
-    3: [
-      { description: "Pitch apresentado na reunião", points: 10 },
-      { description: "MVP definido com escopo claro", points: 10 },
-      { description: "Primeira versão construída", points: 10 },
-    ],
-    4: [
-      { description: "MVP testado com pessoas externas", points: 10 },
-      { description: "3 pontos de melhoria implementados", points: 10 },
-      { description: "Material de apresentação iniciado", points: 10 },
-    ],
-    5: [
-      { description: "Canal de aquisição testado", points: 10 },
-      { description: "Tentativa real de venda realizada", points: 10 },
-      { description: "Métricas registradas", points: 10 },
-    ],
-    6: [
-      { description: "Apresentação final entregue", points: 10 },
-      { description: "Carta de transformação escrita", points: 10 },
-      { description: "Próximo passo definido por cada membro", points: 10 },
-    ],
+  const STATUS_BADGE: Record<WeekStatus, { label: string; className: string }> = {
+    futura: { label: "Futura", className: "bg-secondary text-secondary-foreground" },
+    ativa: { label: t("common.active_f"), className: "bg-primary text-primary-foreground" },
+    encerrada: { label: "Encerrada", className: "bg-muted text-muted-foreground" },
   };
 
   const loadWeeks = useCallback(async () => {
@@ -119,7 +120,6 @@ export default function WeeksListPage() {
     await supabase.from("weeks")
       .update({ is_active: true, starts_at: activateTarget.starts_at ?? now, ends_at: null })
       .eq("id", activateTarget.id);
-    // Auto-populate criteria
     const { data: existingCriteria } = await supabase.from("checklist_criteria").select("id").eq("week_id", activateTarget.id);
     if ((existingCriteria ?? []).length === 0) {
       const defaults = DEFAULT_CRITERIA[activateTarget.number] ?? [];
@@ -129,7 +129,7 @@ export default function WeeksListPage() {
         );
       }
     }
-    toast({ title: `Semana ${activateTarget.number} ativada!` });
+    toast({ title: `${t("common.week")} ${activateTarget.number} ativada!` });
     await loadWeeks();
     setActivating(false);
     setActivateTarget(null);
@@ -152,7 +152,7 @@ export default function WeeksListPage() {
           );
         }
       }
-      toast({ title: `Avançou para Semana ${next.number}!` });
+      toast({ title: `Avançou para ${t("common.week")} ${next.number}!` });
     } else {
       toast({ title: "Desafio encerrado!" });
     }
@@ -192,30 +192,36 @@ export default function WeeksListPage() {
     return format(new Date(d + "T00:00:00"), "dd/MM/yyyy");
   };
 
+  const featurePills = [
+    { icon: BookOpen, label: t("weeks.materials") },
+    { icon: FileUp, label: t("weeks.deliveries") },
+    { icon: ClipboardList, label: t("weeks.checklist") },
+    { icon: PackageCheck, label: t("weeks.activitiesLabel") },
+  ];
+
   return (
-    <DashboardLayout title="Semanas">
-      {/* Admin controls */}
+    <DashboardLayout title={t("weeks.title")}>
       {isAdmin && (
         <div className="flex flex-wrap items-center gap-3 mb-6">
           {activeWeek && (
             <Badge className="bg-primary text-primary-foreground text-sm px-3 py-1">
-              Semana ativa: {activeWeek.number} — {activeWeek.title}
+              {t("weeks.activeWeek", { number: activeWeek.number, title: activeWeek.title })}
             </Badge>
           )}
           <div className="flex-1" />
           {activeWeek && !isLastWeek && (
             <Button variant="outline" size="sm" onClick={() => { setShowAdvance(true); setAdvanceStep(0); }} className="gap-1.5">
-              <ChevronRight className="h-4 w-4" /> Avançar semana
+              <ChevronRight className="h-4 w-4" /> {t("weeks.advanceWeek")}
             </Button>
           )}
           {isLastWeek && activeWeek && (
             <Button variant="outline" size="sm" onClick={() => { setShowAdvance(true); setAdvanceStep(0); }} className="gap-1.5">
-              <Trophy className="h-4 w-4" /> Encerrar desafio
+              <Trophy className="h-4 w-4" /> {t("weeks.endChallenge")}
             </Button>
           )}
           {challengeFinished && (
             <Badge variant="secondary" className="text-sm px-3 py-1 gap-1.5">
-              <Trophy className="h-4 w-4" /> Desafio encerrado
+              <Trophy className="h-4 w-4" /> {t("weeks.challengeEnded")}
             </Badge>
           )}
         </div>
@@ -232,19 +238,12 @@ export default function WeeksListPage() {
           ))}
         </div>
       ) : weeks.length === 0 ? (
-        <div className="glass-card p-8 text-center text-muted-foreground">Nenhuma semana cadastrada.</div>
+        <div className="glass-card p-8 text-center text-muted-foreground">{t("weeks.noWeeks")}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {weeks.map((week) => {
             const status = getWeekStatus(week, activeNumber);
             const badge = STATUS_BADGE[status];
-
-            const featurePills = [
-              { icon: BookOpen, label: "Materiais" },
-              { icon: FileUp, label: "Entregas" },
-              { icon: ClipboardList, label: "Checklist" },
-              { icon: PackageCheck, label: "Atividades" },
-            ];
 
             return (
               <div
@@ -257,10 +256,9 @@ export default function WeeksListPage() {
                   status === "encerrada" && "opacity-60"
                 )}
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Semana {week.number}</p>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("common.week")} {week.number}</p>
                     <h3 className="text-foreground font-semibold mt-1 leading-snug">{week.title}</h3>
                     {week.theme && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{week.theme}</p>
@@ -269,7 +267,6 @@ export default function WeeksListPage() {
                   <Badge className={cn("text-xs shrink-0", badge.className)}>{badge.label}</Badge>
                 </div>
 
-                {/* Feature pills */}
                 <div className="flex flex-wrap gap-1.5">
                   {featurePills.map(({ icon: Icon, label }) => (
                     <span
@@ -282,7 +279,6 @@ export default function WeeksListPage() {
                   ))}
                 </div>
 
-                {/* Footer: dates + CTA */}
                 <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/50">
                   <div className="flex gap-3 text-xs text-muted-foreground">
                     <span>{formatDate(week.starts_at)}{week.ends_at ? ` → ${formatDate(week.ends_at)}` : ""}</span>
@@ -291,30 +287,29 @@ export default function WeeksListPage() {
                     "flex items-center gap-1 text-xs font-medium transition-colors",
                     status === "ativa" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                   )}>
-                    {status === "ativa" ? "Acessar" : "Ver conteúdo"}
+                    {status === "ativa" ? t("weeks.access") : t("weeks.viewContent")}
                     <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </span>
                 </div>
 
-                {/* Admin controls */}
                 {isAdmin && (
                   <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(week)} className="gap-1 text-xs">
-                      <Pencil className="h-3 w-3" /> Editar
+                      <Pencil className="h-3 w-3" /> {t("common.edit")}
                     </Button>
                     {status === "futura" && (
                       <Button size="sm" variant="outline" onClick={() => setActivateTarget(week)} className="gap-1 text-xs">
-                        <Play className="h-3 w-3" /> Ativar
+                        <Play className="h-3 w-3" /> {t("weeks.activate")}
                       </Button>
                     )}
                     {status === "encerrada" && (
                       <Button size="sm" variant="outline" onClick={() => setActivateTarget(week)} className="gap-1 text-xs">
-                        <Play className="h-3 w-3" /> Reativar
+                        <Play className="h-3 w-3" /> {t("weeks.reactivate")}
                       </Button>
                     )}
                     {status === "ativa" && (
                       <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
-                        <CheckCircle2 className="h-3 w-3" /> Em andamento
+                        <CheckCircle2 className="h-3 w-3" /> {t("weeks.inProgress")}
                       </Badge>
                     )}
                   </div>
@@ -325,21 +320,20 @@ export default function WeeksListPage() {
         </div>
       )}
 
-      {/* Activate Dialog */}
       {isAdmin && (
         <>
           <Dialog open={!!activateTarget} onOpenChange={(o) => !o && setActivateTarget(null)}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Ativar Semana {activateTarget?.number}?</DialogTitle>
+                <DialogTitle>{t("weeks.activateTitle", { number: activateTarget?.number })}</DialogTitle>
                 <DialogDescription>
-                  Isso vai desativar qualquer outra semana ativa e tornar a Semana {activateTarget?.number} a semana atual.
+                  {t("weeks.activateDescription", { number: activateTarget?.number })}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setActivateTarget(null)}>Cancelar</Button>
+                <Button variant="ghost" onClick={() => setActivateTarget(null)}>{t("common.cancel")}</Button>
                 <Button onClick={handleActivate} disabled={activating}>
-                  {activating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmar
+                  {activating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {t("common.confirm")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -350,22 +344,29 @@ export default function WeeksListPage() {
               <DialogHeader>
                 <DialogTitle>
                   {advanceStep === 0
-                    ? (isLastWeek ? "Encerrar desafio?" : `Avançar para Semana ${(activeWeek?.number ?? 0) + 1}?`)
-                    : "Tem certeza absoluta?"}
+                    ? (isLastWeek
+                        ? t("weeks.advanceTitle_end")
+                        : t("weeks.advanceTitle_next", { number: (activeWeek?.number ?? 0) + 1 }))
+                    : t("weeks.absolutelySure")}
                 </DialogTitle>
                 <DialogDescription>
                   {advanceStep === 0
-                    ? `A Semana ${activeWeek?.number} será encerrada. ${isLastWeek ? "O desafio será finalizado." : `A Semana ${(activeWeek?.number ?? 0) + 1} será ativada.`}`
-                    : "Confirmação final."}
+                    ? t("weeks.advanceDescription", {
+                        number: activeWeek?.number,
+                        consequence: isLastWeek
+                          ? t("weeks.advanceConsequence_end")
+                          : t("weeks.advanceConsequence_next", { nextNumber: (activeWeek?.number ?? 0) + 1 }),
+                      })
+                    : t("weeks.finalConfirmation")}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => { setShowAdvance(false); setAdvanceStep(0); }}>Cancelar</Button>
+                <Button variant="ghost" onClick={() => { setShowAdvance(false); setAdvanceStep(0); }}>{t("common.cancel")}</Button>
                 {advanceStep === 0 ? (
-                  <Button variant="destructive" onClick={() => setAdvanceStep(1)}>Continuar</Button>
+                  <Button variant="destructive" onClick={() => setAdvanceStep(1)}>{t("common.continue")}</Button>
                 ) : (
                   <Button variant="destructive" onClick={handleAdvance} disabled={advancing}>
-                    {advancing && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmar
+                    {advancing && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {t("common.confirm")}
                   </Button>
                 )}
               </DialogFooter>
@@ -374,25 +375,25 @@ export default function WeeksListPage() {
 
           <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
             <DialogContent>
-              <DialogHeader><DialogTitle>Editar Semana {editTarget?.number}</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t("weeks.editTitle", { number: editTarget?.number })}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground font-medium">Título</label>
+                  <label className="text-xs text-muted-foreground font-medium">{t("weeks.fieldTitle")}</label>
                   <Input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground font-medium">Tema</label>
+                  <label className="text-xs text-muted-foreground font-medium">{t("weeks.fieldTheme")}</label>
                   <Textarea value={editForm.theme} onChange={(e) => setEditForm((p) => ({ ...p, theme: e.target.value }))} rows={2} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <DateField label="Início" value={editForm.starts_at} onChange={(d) => setEditForm((p) => ({ ...p, starts_at: d }))} />
-                  <DateField label="Encerramento" value={editForm.ends_at} onChange={(d) => setEditForm((p) => ({ ...p, ends_at: d }))} />
+                  <DateField label={t("weeks.fieldStart")} value={editForm.starts_at} onChange={(d) => setEditForm((p) => ({ ...p, starts_at: d ?? null }))} />
+                  <DateField label={t("weeks.fieldEnd")} value={editForm.ends_at} onChange={(d) => setEditForm((p) => ({ ...p, ends_at: d ?? null }))} />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setEditTarget(null)}>Cancelar</Button>
+                <Button variant="ghost" onClick={() => setEditTarget(null)}>{t("common.cancel")}</Button>
                 <Button onClick={handleSaveEdit} disabled={saving || !editForm.title.trim()}>
-                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Salvar
+                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {t("common.save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -404,6 +405,7 @@ export default function WeeksListPage() {
 }
 
 function DateField({ label, value, onChange }: { label: string; value: Date | null; onChange: (d: Date | undefined) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
       <label className="text-xs text-muted-foreground font-medium">{label}</label>
@@ -411,7 +413,7 @@ function DateField({ label, value, onChange }: { label: string; value: Date | nu
         <PopoverTrigger asChild>
           <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value ? format(value, "dd/MM/yyyy") : "Selecionar"}
+            {value ? format(value, "dd/MM/yyyy") : t("adminActivities.selectDate")}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

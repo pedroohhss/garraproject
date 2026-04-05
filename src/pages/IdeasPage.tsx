@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { CARGOS } from "@/components/CargoSelectDialog";
+import { useTranslation } from "react-i18next";
 
 interface Idea {
   id: string;
@@ -51,21 +52,23 @@ interface VoteRow {
   quantity: number | null;
 }
 
-const CATEGORIES = [
-  { value: "produto", label: "Produto" },
-  { value: "serviço", label: "Serviço" },
-  { value: "tecnologia", label: "Tecnologia" },
-  { value: "educação", label: "Educação" },
-  { value: "outro", label: "Outro" },
-];
-
 const MAX_IDEAS_PER_USER = 2;
 const MAX_VOTES_PER_USER = 5;
 const MAX_GROUPS = 15;
 
 export default function IdeasPage() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+
+  const CATEGORIES = useMemo(() => [
+    { value: "produto", label: t("ideas.categories.produto") },
+    { value: "serviço", label: t("ideas.categories.serviço") },
+    { value: "tecnologia", label: t("ideas.categories.tecnologia") },
+    { value: "educação", label: t("ideas.categories.educação") },
+    { value: "outro", label: t("ideas.categories.outro") },
+  ], [t]);
+
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [config, setConfig] = useState<{
     ideas_open: boolean;
@@ -165,7 +168,7 @@ export default function IdeasPage() {
         const sum = voteSumMap.get(i.id) ?? 0;
         return {
           ...i,
-          authorName: i.created_by ? nameMap.get(i.created_by) ?? "Desconhecido" : "Desconhecido",
+          authorName: i.created_by ? nameMap.get(i.created_by) ?? t("common.unknown") : t("common.unknown"),
           voteCount: count,
           avgRating: count > 0 ? sum / count : 0,
           totalVotes: sum,
@@ -181,7 +184,7 @@ export default function IdeasPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 8000);
@@ -230,9 +233,9 @@ export default function IdeasPage() {
 
   const handleSave = async () => {
     const errs: { title?: string; description?: string; category?: string } = {};
-    if (!title.trim()) errs.title = "Nome da ideia é obrigatório.";
-    if (!description.trim()) errs.description = "Descrição é obrigatória.";
-    if (!category) errs.category = "Categoria é obrigatória.";
+    if (!title.trim()) errs.title = t("ideas.errorTitleRequired");
+    if (!description.trim()) errs.description = t("ideas.errorDescriptionRequired");
+    if (!category) errs.category = t("ideas.errorCategoryRequired");
     if (Object.keys(errs).length > 0) {
       setFormErrors(errs);
       return;
@@ -246,21 +249,21 @@ export default function IdeasPage() {
           .update({ title: title.trim(), description: description.trim(), category, problem: problem.trim() || null })
           .eq("id", editingIdea.id);
         if (error) throw error;
-        toast({ title: "Ideia atualizada" });
+        toast({ title: t("ideas.toastUpdated") });
       } else {
         const { error } = await supabase.from("ideas").insert({
           title: title.trim(), description: description.trim(), category,
           problem: problem.trim() || null, created_by: user!.id,
         });
         if (error) throw error;
-        toast({ title: "Ideia cadastrada" });
+        toast({ title: t("ideas.toastCreated") });
       }
       setFormDialogOpen(false);
       resetForm();
       setLoading(true);
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+      toast({ title: t("common.errorSaving"), description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -280,9 +283,9 @@ export default function IdeasPage() {
     }
     const { error } = await supabase.from("ideas").delete().eq("id", id);
     if (error) {
-      toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
+      toast({ title: t("common.errorRemoving"), description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Ideia removida" });
+      toast({ title: t("ideas.toastDeleted") });
       setIdeas((prev) => prev.filter((i) => i.id !== id));
     }
   };
@@ -291,12 +294,12 @@ export default function IdeasPage() {
     e.stopPropagation();
     if (!user || votingInProgress) return;
     if (!config?.voting_open) {
-      toast({ title: "Votação fechada", variant: "destructive" });
+      toast({ title: t("ideas.errorVotingClosed"), variant: "destructive" });
       return;
     }
     const isOwnIdea = ideas.find((i) => i.id === ideaId)?.created_by === user.id;
     if (isOwnIdea) {
-      toast({ title: "Não pode avaliar a própria ideia", variant: "destructive" });
+      toast({ title: t("ideas.errorVoteOwn"), variant: "destructive" });
       return;
     }
     setVotingInProgress(ideaId);
@@ -311,7 +314,7 @@ export default function IdeasPage() {
       if (error) throw error;
       await fetchData();
     } catch (err: any) {
-      toast({ title: "Erro ao avaliar", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     } finally {
       setVotingInProgress(null);
     }
@@ -337,48 +340,45 @@ export default function IdeasPage() {
   };
 
   return (
-    <DashboardLayout title="Ideias">
-      {/* Header */}
+    <DashboardLayout title={t("ideas.title")}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <p className="text-sm text-muted-foreground">
-          {filteredIdeas.length} {filteredIdeas.length === 1 ? "ideia" : "ideias"}
+          {t("ideas.count", { count: filteredIdeas.length })}
           {totalUserVotes > 0 && config?.voting_open && (
-            <span className="ml-2">· {totalUserVotes}/{MAX_VOTES_PER_USER} votos usados</span>
+            <span className="ml-2">· {t("ideas.votesUsed", { current: totalUserVotes, max: MAX_VOTES_PER_USER })}</span>
           )}
         </p>
         {config?.ideas_open ? (
           reachedLimit && !isAdmin ? (
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5" /> Você já cadastrou 2 ideias
+              <Lock className="h-3.5 w-3.5" /> {t("ideas.limitReached")}
             </p>
           ) : (
             <Button size="sm" onClick={openNewDialog} className="gap-1.5">
-              <Plus className="h-4 w-4" /> Nova Ideia
+              <Plus className="h-4 w-4" /> {t("ideas.newIdea")}
             </Button>
           )
         ) : (
           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <Lock className="h-3.5 w-3.5" /> Cadastro de ideias encerrado
+            <Lock className="h-3.5 w-3.5" /> {t("ideas.registrationClosed")}
           </p>
         )}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Buscar por nome da ideia..." className="pl-9" />
+          <Input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t("ideas.searchPlaceholder")} className="pl-9" />
         </div>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="todas">Todas categorias</SelectItem>
+            <SelectItem value="todas">{t("ideas.allCategories")}</SelectItem>
             {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Ideas grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -394,7 +394,7 @@ export default function IdeasPage() {
         <div className="glass-card p-12 flex flex-col items-center justify-center text-center space-y-3">
           <Lightbulb className="h-10 w-10 text-muted-foreground" />
           <p className="text-muted-foreground">
-            {ideas.length === 0 ? "Nenhuma ideia cadastrada ainda." : "Nenhuma ideia encontrada com esses filtros."}
+            {ideas.length === 0 ? t("ideas.noIdeasYet") : t("ideas.noIdeasFound")}
           </p>
         </div>
       ) : (
@@ -414,11 +414,13 @@ export default function IdeasPage() {
                   <h3 className="text-foreground font-medium leading-tight">{idea.title}</h3>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {idea.category && (
-                      <Badge variant="secondary" className="capitalize text-xs">{idea.category}</Badge>
+                      <Badge variant="secondary" className="capitalize text-xs">
+                        {CATEGORIES.find(c => c.value === idea.category)?.label ?? idea.category}
+                      </Badge>
                     )}
                     {showClassifiedBadge && isClassified && (
                       <Badge variant="default" className="text-[10px] gap-0.5">
-                        <Trophy className="h-2.5 w-2.5" /> Classificada
+                        <Trophy className="h-2.5 w-2.5" /> {t("ideas.classified")}
                       </Badge>
                     )}
                   </div>
@@ -429,7 +431,7 @@ export default function IdeasPage() {
                 )}
 
                 <div className="text-xs text-muted-foreground pt-1">
-                  por{" "}
+                  {t("ideas.by")}{" "}
                   <button
                     type="button"
                     className="text-primary hover:underline"
@@ -439,7 +441,6 @@ export default function IdeasPage() {
                   </button>
                 </div>
 
-                {/* Star rating - only when voting_open */}
                 {showStars && (
                   <div className="flex items-center gap-3 pt-2 border-t border-border">
                     <div className="flex items-center gap-0.5">
@@ -461,23 +462,21 @@ export default function IdeasPage() {
                       {votingInProgress === idea.id && <Loader2 className="h-4 w-4 animate-spin ml-1 text-muted-foreground" />}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {idea.totalVotes > 0 ? `${idea.totalVotes} pts · ${idea.avgRating.toFixed(1)} ★ (${idea.voteCount})` : "Sem avaliações"}
+                      {idea.totalVotes > 0 ? t("ideas.ratingStats", { total: idea.totalVotes, avg: idea.avgRating.toFixed(1), count: idea.voteCount }) : t("ideas.noRatings")}
                     </span>
                   </div>
                 )}
 
-                {/* Vote totals - when voting_open OR voting closed */}
                 {!showStars && showVoteTotals && idea.totalVotes > 0 && (
                   <div className="flex items-center gap-2 pt-2 border-t border-border">
                     <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-medium text-foreground">{idea.totalVotes} pts</span>
+                    <span className="text-sm font-medium text-foreground">{t("ideas.points", { count: idea.totalVotes })}</span>
                     <span className="text-xs text-muted-foreground">
-                      ({idea.avgRating.toFixed(1)} ★ · {idea.voteCount} votos)
+                      ({t("ideas.ratingDetails", { avg: idea.avgRating.toFixed(1), count: idea.voteCount })})
                     </span>
                   </div>
                 )}
 
-                {/* Admin actions only */}
                 {isAdmin && (
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={(e) => openEditDialog(idea, e)}>
@@ -494,31 +493,30 @@ export default function IdeasPage() {
         </div>
       )}
 
-      {/* Create / Edit dialog */}
       <Dialog open={formDialogOpen} onOpenChange={(open) => { if (!open) { setFormDialogOpen(false); resetForm(); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingIdea ? "Editar Ideia" : "Nova Ideia"}</DialogTitle>
+            <DialogTitle>{editingIdea ? t("ideas.editIdea") : t("ideas.newIdeaTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Nome da ideia <span className="text-destructive">*</span></Label>
+              <Label>{t("ideas.fieldName")} <span className="text-destructive">*</span></Label>
               <Input
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); setFormErrors((prev) => ({ ...prev, title: undefined })); }}
                 maxLength={100}
-                placeholder="Ex: App de caronas universitárias"
+                placeholder={t("ideas.namePlaceholder")}
                 className={formErrors.title ? "border-destructive focus-visible:ring-destructive" : ""}
               />
               {formErrors.title && <p className="text-xs text-destructive">{formErrors.title}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Descrição <span className="text-destructive">*</span></Label>
+              <Label>{t("ideas.fieldDescription")} <span className="text-destructive">*</span></Label>
               <Textarea
                 value={description}
                 onChange={(e) => { setDescription(e.target.value); setFormErrors((prev) => ({ ...prev, description: undefined })); }}
                 maxLength={280}
-                placeholder="Descreva brevemente a ideia"
+                placeholder={t("ideas.descriptionPlaceholder")}
                 rows={3}
                 className={formErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}
               />
@@ -528,10 +526,10 @@ export default function IdeasPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Categoria <span className="text-destructive">*</span></Label>
+              <Label>{t("ideas.fieldCategory")} <span className="text-destructive">*</span></Label>
               <Select value={category} onValueChange={(v) => { setCategory(v); setFormErrors((prev) => ({ ...prev, category: undefined })); }}>
                 <SelectTrigger className={formErrors.category ? "border-destructive focus-visible:ring-destructive" : ""}>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t("common.select")} />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
@@ -540,19 +538,18 @@ export default function IdeasPage() {
               {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Problema que resolve</Label>
-              <Textarea value={problem} onChange={(e) => setProblem(e.target.value)} maxLength={500} placeholder="Opcional" rows={2} />
+              <Label>{t("ideas.fieldProblem")}</Label>
+              <Textarea value={problem} onChange={(e) => setProblem(e.target.value)} maxLength={500} placeholder={t("common.optional")} rows={2} />
               <p className="text-xs text-muted-foreground text-right">{problem.length}/500</p>
             </div>
             <Button type="button" onClick={handleSave} disabled={saving} className="w-full">
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editingIdea ? "Salvar Alterações" : "Cadastrar Ideia"}
+              {editingIdea ? t("ideas.saveChanges") : t("ideas.registerIdea")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Detail dialog */}
       <Dialog open={!!detailIdea} onOpenChange={(open) => { if (!open) setDetailIdea(null); }}>
         <DialogContent className="sm:max-w-lg">
           {detailIdea && (
@@ -562,23 +559,25 @@ export default function IdeasPage() {
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 {detailIdea.category && (
-                  <Badge variant="secondary" className="capitalize">{detailIdea.category}</Badge>
+                  <Badge variant="secondary" className="capitalize">
+                    {CATEGORIES.find(c => c.value === detailIdea.category)?.label ?? detailIdea.category}
+                  </Badge>
                 )}
                 {detailIdea.description && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Descrição</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("ideas.fieldDescription")}</p>
                     <p className="text-sm text-foreground">{detailIdea.description}</p>
                   </div>
                 )}
                 {detailIdea.problem && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Problema que resolve</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("ideas.fieldProblem")}</p>
                     <p className="text-sm text-foreground">{detailIdea.problem}</p>
                   </div>
                 )}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" /> por {detailIdea.authorName}
+                    <Users className="h-3.5 w-3.5" /> {t("ideas.byAuthor", { name: detailIdea.authorName })}
                   </span>
                   <span className="flex items-center gap-1">
                     <CalendarIcon className="h-3.5 w-3.5" />
@@ -587,16 +586,15 @@ export default function IdeasPage() {
                   {detailIdea.totalVotes > 0 && (
                     <span className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                      {detailIdea.totalVotes} pts · {detailIdea.avgRating.toFixed(1)} ★ ({detailIdea.voteCount} votos)
+                      {t("ideas.ratingStats", { total: detailIdea.totalVotes, avg: detailIdea.avgRating.toFixed(1), count: detailIdea.voteCount })}
                     </span>
                   )}
                 </div>
 
-                {/* Group members with cargo */}
                 {detailIdea.groupName && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Grupo: {detailIdea.groupName} ({detailIdea.groupMembers.length}/5 membros)
+                      {t("ideas.groupLabel", { name: detailIdea.groupName, current: detailIdea.groupMembers.length, max: 5 })}
                     </p>
                     {detailIdea.groupMembers.length > 0 ? (
                       <div className="space-y-1.5">
@@ -614,16 +612,15 @@ export default function IdeasPage() {
                         })}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Nenhum membro ainda.</p>
+                      <p className="text-sm text-muted-foreground">{t("groups.noMembers")}</p>
                     )}
 
-                    {/* Vacant required cargos */}
                     {(() => {
                       const vacant = CARGOS.filter((c) => c.required && !detailIdea.groupMembers.some((m) => m.cargo === c.value));
                       if (vacant.length === 0) return null;
                       return (
                         <div className="mt-2">
-                          <p className="text-xs text-destructive mb-1">Cargos obrigatórios vagos:</p>
+                          <p className="text-xs text-destructive mb-1">{t("groups.requiredRolesVacant")}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {vacant.map((c) => {
                               const Icon = c.icon;

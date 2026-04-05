@@ -10,6 +10,7 @@ import {
   MapPin, Calendar as CalendarIcon, Briefcase, Instagram, Linkedin,
   User, Heart, Target, Sparkles, Pencil, Loader2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ProfileData {
   id: string;
@@ -32,6 +33,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +46,6 @@ export default function ProfilePage() {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      // Always query users table; RLS controls field visibility for other users.
       const { data, error: queryError } = await supabase
         .from("users")
         .select("id, full_name, bio, avatar_url, linkedin_url, sexo, idade, estado_civil, estado, cidade, trabalho_estudo, habilidades, objetivos_curto_prazo, objetivos_longo_prazo, instagram_url, cargos_aptos, created_at")
@@ -63,7 +64,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Perfil">
+      <DashboardLayout title={t("profile.title")}>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -73,10 +74,10 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <DashboardLayout title="Perfil">
+      <DashboardLayout title={t("profile.title")}>
         <div className="glass-card p-12 text-center">
           <User className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Usuário não encontrado.</p>
+          <p className="text-muted-foreground">{t("profile.userNotFound")}</p>
         </div>
       </DashboardLayout>
     );
@@ -95,7 +96,7 @@ export default function ProfilePage() {
   ].filter(Boolean) as { icon: React.ElementType; label: string }[];
 
   return (
-    <DashboardLayout title="Perfil">
+    <DashboardLayout title={t("profile.title")}>
       {/* Banner + Avatar */}
       <div className="glass-card overflow-hidden">
         <div className="h-28 bg-gradient-to-r from-primary/30 via-primary/10 to-transparent" />
@@ -115,7 +116,7 @@ export default function ProfilePage() {
                   <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{location}</span>
                 )}
                 {joinDate && (
-                  <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" />Membro desde {joinDate}</span>
+                  <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" />{t("profile.memberSince", { date: joinDate })}</span>
                 )}
               </div>
             </div>
@@ -132,7 +133,7 @@ export default function ProfilePage() {
               )}
               {isOwnProfile && (
                 <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => navigate(`/perfil/${userId}/editar`)}>
-                  <Pencil className="h-3.5 w-3.5" /> Editar
+                  <Pencil className="h-3.5 w-3.5" /> {t("profile.edit")}
                 </Button>
               )}
             </div>
@@ -152,22 +153,20 @@ export default function ProfilePage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        {/* Bio */}
         {profile.bio && (
           <div className="glass-card p-5 space-y-2 lg:col-span-2">
-            <p className="section-label">Sobre</p>
+            <p className="section-label">{t("profile.about")}</p>
             <p className="text-sm text-foreground leading-relaxed">{profile.bio}</p>
           </div>
         )}
 
-        {/* Objectives */}
         {(profile.objetivos_curto_prazo || profile.objetivos_longo_prazo) && (
           <>
             {profile.objetivos_curto_prazo && (
               <div className="glass-card p-5 space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Target className="h-3.5 w-3.5 text-primary" />
-                  <p className="section-label">Objetivo de Curto Prazo</p>
+                  <p className="section-label">{t("profile.shortTermGoal")}</p>
                 </div>
                 <p className="text-sm text-foreground">{profile.objetivos_curto_prazo}</p>
               </div>
@@ -176,7 +175,7 @@ export default function ProfilePage() {
               <div className="glass-card p-5 space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  <p className="section-label">Objetivo de Longo Prazo</p>
+                  <p className="section-label">{t("profile.longTermGoal")}</p>
                 </div>
                 <p className="text-sm text-foreground">{profile.objetivos_longo_prazo}</p>
               </div>
@@ -184,10 +183,9 @@ export default function ProfilePage() {
           </>
         )}
 
-        {/* Skills */}
         {habilidadesList.length > 0 && (
           <div className="glass-card p-5 space-y-2">
-            <p className="section-label">Habilidades</p>
+            <p className="section-label">{t("profile.skills")}</p>
             <div className="flex flex-wrap gap-1.5">
               {habilidadesList.map((h, i) => (
                 <Badge key={i} variant="secondary" className="text-xs">{h}</Badge>
@@ -196,10 +194,9 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Cargos aptos */}
         {cargosList.length > 0 && (
           <div className="glass-card p-5 space-y-2">
-            <p className="section-label">Cargos que melhor me representam</p>
+            <p className="section-label">{t("profile.roles")}</p>
             <div className="space-y-2">
               {cargosList.map((cargo) => {
                 if (!cargo) return null;

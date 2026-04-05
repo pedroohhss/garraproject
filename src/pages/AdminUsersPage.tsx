@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTranslation } from "react-i18next";
 
 interface UserRow {
   id: string;
@@ -61,6 +62,7 @@ const ROLE_COLORS: Record<string, string> = {
 const MAX_PARTICIPANTS = 75;
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -94,7 +96,7 @@ export default function AdminUsersPage() {
 
       setUsers(enriched);
     } catch {
-      toast({ title: "Erro ao carregar usuários", variant: "destructive" });
+      toast({ title: t("common.errorLoading"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -118,11 +120,11 @@ export default function AdminUsersPage() {
     setUpdatingRole(true);
     const { error } = await supabase.from("users").update({ role: newRole }).eq("id", userId);
     if (error) {
-      toast({ title: "Erro ao alterar perfil", description: error.message, variant: "destructive" });
+      toast({ title: t("common.errorUpdating"), description: error.message, variant: "destructive" });
     } else {
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
       setSelectedUser((prev) => prev && prev.id === userId ? { ...prev, role: newRole } : prev);
-      toast({ title: "Perfil atualizado" });
+      toast({ title: t("common.update") });
     }
     setUpdatingRole(false);
   };
@@ -131,11 +133,11 @@ export default function AdminUsersPage() {
     setUpdatingStatus(true);
     const { error } = await supabase.from("users").update({ is_active: active }).eq("id", userId);
     if (error) {
-      toast({ title: "Erro ao alterar status", description: error.message, variant: "destructive" });
+      toast({ title: t("common.errorUpdating"), description: error.message, variant: "destructive" });
     } else {
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_active: active } : u));
       setSelectedUser((prev) => prev && prev.id === userId ? { ...prev, is_active: active } : prev);
-      toast({ title: active ? "Usuário ativado" : "Usuário desativado" });
+      toast({ title: active ? t("adminUsers.statusActive") : t("adminUsers.statusInactive") });
     }
     setUpdatingStatus(false);
   };
@@ -148,11 +150,11 @@ export default function AdminUsersPage() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast({ title: "Usuário excluído com sucesso" });
+      toast({ title: t("common.delete") });
       setSelectedUser(null);
       loadUsers();
     } catch (err: any) {
-      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+      toast({ title: t("common.errorDeleting"), description: err.message, variant: "destructive" });
     } finally {
       setDeleting(false);
     }
@@ -166,27 +168,34 @@ export default function AdminUsersPage() {
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case "participante": return t("adminUsers.roleParticipante");
+      case "representante": return t("adminUsers.roleRepresentante");
+      case "lider": return t("adminUsers.roleLider");
+      default: return role;
+    }
+  };
+
   return (
-    <DashboardLayout title="Gestão de Usuários">
-      {/* Summary */}
+    <DashboardLayout title={t("adminUsers.title")}>
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <div className="glass-card px-4 py-3 flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
-          <span className="text-sm text-muted-foreground">Total:</span>
+          <span className="text-sm text-muted-foreground">{t("adminUsers.total")}</span>
           <span className="text-sm font-semibold text-foreground">{users.length}</span>
         </div>
         <div className="glass-card px-4 py-3 flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Vagas restantes:</span>
+          <span className="text-sm text-muted-foreground">{t("adminUsers.remainingSlots")}</span>
           <span className="text-sm font-semibold text-foreground">{spotsLeft}</span>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou email..."
+            placeholder={t("adminUsers.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -194,37 +203,36 @@ export default function AdminUsersPage() {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por perfil" />
+            <SelectValue placeholder={t("adminUsers.filterByRole")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os perfis</SelectItem>
-            <SelectItem value="participante">Participante</SelectItem>
-            <SelectItem value="representante">Representante</SelectItem>
-            <SelectItem value="lider">Líder</SelectItem>
+            <SelectItem value="all">{t("adminUsers.allRoles")}</SelectItem>
+            <SelectItem value="participante">{t("adminUsers.roleParticipante")}</SelectItem>
+            <SelectItem value="representante">{t("adminUsers.roleRepresentante")}</SelectItem>
+            <SelectItem value="lider">{t("adminUsers.roleLider")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Table */}
       <div className="glass-card overflow-hidden">
         {loading ? (
           <div className="p-8 flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">Nenhum usuário encontrado.</div>
+          <div className="p-8 text-center text-muted-foreground">{t("adminUsers.noUsersFound")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="text-left px-4 py-3 font-medium">Usuário</th>
-                  <th className="text-left px-4 py-3 font-medium">Email</th>
-                  <th className="text-left px-4 py-3 font-medium">Perfil</th>
-                  <th className="text-left px-4 py-3 font-medium">Grupo</th>
-                  <th className="text-left px-4 py-3 font-medium">Cargo</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 font-medium">Cadastro</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colUser")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colEmail")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colRole")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colGroup")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colCargo")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colStatus")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("adminUsers.colRegistration")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,7 +256,7 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-foreground font-medium">{user.full_name}</span>
                           {user.profileIncomplete && (
-                            <span title="Perfil incompleto">
+                            <span title={t("adminUsers.profileIncomplete")}>
                               <AlertTriangle className="h-3.5 w-3.5 text-destructive/70" />
                             </span>
                           )}
@@ -258,14 +266,14 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                     <td className="px-4 py-3">
                       <Badge className={`text-xs capitalize ${ROLE_COLORS[user.role] ?? ""}`}>
-                        {user.role}
+                        {getRoleLabel(user.role)}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{user.groupName ?? "Sem grupo"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{user.groupName ?? t("common.noGroup")}</td>
                     <td className="px-4 py-3 text-muted-foreground capitalize">{user.groupCargo ?? "—"}</td>
                     <td className="px-4 py-3">
                       <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
-                        {user.is_active ? "Ativo" : "Inativo"}
+                        {user.is_active ? t("adminUsers.statusActive") : t("adminUsers.statusInactive")}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(user.created_at)}</td>
@@ -277,7 +285,6 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* User Detail Sheet */}
       <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
         <SheetContent className="overflow-y-auto">
           {selectedUser && (
@@ -296,9 +303,8 @@ export default function AdminUsersPage() {
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
-                {/* Role */}
                 <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Perfil</label>
+                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("adminUsers.detailRole")}</label>
                   <Select
                     value={selectedUser.role}
                     onValueChange={(val) => handleRoleChange(selectedUser.id, val)}
@@ -308,16 +314,15 @@ export default function AdminUsersPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="participante">Participante</SelectItem>
-                      <SelectItem value="representante">Representante</SelectItem>
-                      <SelectItem value="lider">Líder</SelectItem>
+                      <SelectItem value="participante">{t("adminUsers.roleParticipante")}</SelectItem>
+                      <SelectItem value="representante">{t("adminUsers.roleRepresentante")}</SelectItem>
+                      <SelectItem value="lider">{t("adminUsers.roleLider")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Status */}
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Ativo</label>
+                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("adminUsers.detailActive")}</label>
                   <Switch
                     checked={selectedUser.is_active}
                     onCheckedChange={(val) => handleStatusToggle(selectedUser.id, val)}
@@ -325,43 +330,39 @@ export default function AdminUsersPage() {
                   />
                 </div>
 
-                {/* Group info */}
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Grupo</label>
-                  <p className="text-sm text-foreground">{selectedUser.groupName ?? "Sem grupo"}</p>
+                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("adminUsers.detailGroup")}</label>
+                  <p className="text-sm text-foreground">{selectedUser.groupName ?? t("common.noGroup")}</p>
                   {selectedUser.groupCargo && (
-                    <p className="text-xs text-muted-foreground capitalize">Cargo: {selectedUser.groupCargo}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{t("adminUsers.detailCargo", { cargo: selectedUser.groupCargo })}</p>
                   )}
                 </div>
 
-                {/* Personal info */}
                 <div className="space-y-3 border-t border-border pt-4">
-                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dados pessoais</label>
-                  <InfoRow label="Email" value={selectedUser.email} />
-                  <InfoRow label="Idade" value={selectedUser.idade?.toString()} />
-                  <InfoRow label="Sexo" value={selectedUser.sexo} />
-                  <InfoRow label="Estado civil" value={selectedUser.estado_civil} />
-                  <InfoRow label="Cidade" value={selectedUser.cidade} />
-                  <InfoRow label="Estado" value={selectedUser.estado} />
-                  <InfoRow label="Trabalho/Estudo" value={selectedUser.trabalho_estudo} />
+                  <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("adminUsers.personalData")}</label>
+                  <InfoRow label={t("adminUsers.fieldEmail")} value={selectedUser.email} />
+                  <InfoRow label={t("adminUsers.fieldAge")} value={selectedUser.idade?.toString()} />
+                  <InfoRow label={t("adminUsers.fieldGender")} value={selectedUser.sexo} />
+                  <InfoRow label={t("adminUsers.fieldMaritalStatus")} value={selectedUser.estado_civil} />
+                  <InfoRow label={t("adminUsers.fieldCity")} value={selectedUser.cidade} />
+                  <InfoRow label={t("adminUsers.fieldState")} value={selectedUser.estado} />
+                  <InfoRow label={t("adminUsers.fieldWorkStudy")} value={selectedUser.trabalho_estudo} />
                 </div>
 
-                {/* Bio */}
                 {selectedUser.bio && (
                   <div className="space-y-1 border-t border-border pt-4">
-                    <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bio</label>
+                    <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("adminUsers.fieldBio")}</label>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{selectedUser.bio}</p>
                   </div>
                 )}
 
-                {/* Skills & goals */}
                 <div className="space-y-3 border-t border-border pt-4">
-                  <InfoRow label="Habilidades" value={selectedUser.habilidades} />
-                  <InfoRow label="Objetivos curto prazo" value={selectedUser.objetivos_curto_prazo} />
-                  <InfoRow label="Objetivos longo prazo" value={selectedUser.objetivos_longo_prazo} />
+                  <InfoRow label={t("adminUsers.fieldSkills")} value={selectedUser.habilidades} />
+                  <InfoRow label={t("adminUsers.fieldShortGoal")} value={selectedUser.objetivos_curto_prazo} />
+                  <InfoRow label={t("adminUsers.fieldLongGoal")} value={selectedUser.objetivos_longo_prazo} />
                   {selectedUser.cargos_aptos && selectedUser.cargos_aptos.length > 0 && (
                     <div>
-                      <span className="text-xs text-muted-foreground">Cargos aptos</span>
+                      <span className="text-xs text-muted-foreground">{t("adminUsers.fieldRoles")}</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {selectedUser.cargos_aptos.map((c) => (
                           <Badge key={c} variant="secondary" className="text-xs capitalize">{c}</Badge>
@@ -371,7 +372,6 @@ export default function AdminUsersPage() {
                   )}
                 </div>
 
-                {/* Social */}
                 <div className="space-y-2 border-t border-border pt-4">
                   {selectedUser.instagram_url && (
                     <a href={selectedUser.instagram_url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
@@ -385,36 +385,34 @@ export default function AdminUsersPage() {
                   )}
                 </div>
 
-                {/* Profile link */}
                 <button
                   onClick={() => navigate(`/perfil/${selectedUser.id}`)}
                   className="w-full mt-2 py-2 rounded-lg bg-secondary text-foreground text-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
                 >
-                  <ExternalLink className="h-4 w-4" /> Ver perfil público
+                  <ExternalLink className="h-4 w-4" /> {t("adminUsers.viewPublicProfile")}
                 </button>
 
-                {/* Delete user */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full mt-2" disabled={deleting}>
                       {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                      Excluir conta
+                      {t("adminUsers.deleteAccount")}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir conta de {selectedUser.full_name}?</AlertDialogTitle>
+                      <AlertDialogTitle>{t("adminUsers.deleteTitle", { name: selectedUser.full_name })}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação é irreversível. Todos os dados do usuário, incluindo entregas, checklist e participação em grupos serão removidos permanentemente.
+                        {t("adminUsers.deleteDescription")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleDeleteUser(selectedUser.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Excluir permanentemente
+                        {t("adminUsers.deleteConfirm")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

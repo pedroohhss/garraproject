@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Users, FileText, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CARGOS } from "@/components/CargoSelectDialog";
+import { useTranslation } from "react-i18next";
 
 interface WeekData {
   title: string;
@@ -12,6 +13,7 @@ interface WeekData {
 }
 
 export default function ParticipanteDashboard() {
+  const { t } = useTranslation();
   const { profile, user } = useAuth();
   const [activeWeek, setActiveWeek] = useState<WeekData | null>(null);
   const [groupName, setGroupName] = useState<string | null>(null);
@@ -65,23 +67,23 @@ export default function ParticipanteDashboard() {
     load();
   }, [user]);
 
-  const roleName = profile?.role === "representante" ? "Representante" : "Participante";
+  const isRepresentante = profile?.role === "representante";
   const cargoInfo = userCargo ? CARGOS.find((c) => c.value === userCargo) : null;
 
-  const groupValue = groupName
-    ? userCargo
-      ? `${groupName}`
-      : groupName
-    : "Sem grupo";
+  const groupValue = groupName ? groupName : t("dashboard.participante.noGroup");
 
   const cards = [
-    { label: "Semana Atual", value: activeWeek?.title ?? "Não iniciado", icon: Calendar },
-    { label: "Meu Grupo", value: groupValue, icon: Users, extra: cargoInfo },
-    { label: "Entregas Pendentes", value: "—", icon: FileText },
+    { label: t("dashboard.participante.currentWeek"), value: activeWeek?.title ?? t("dashboard.participante.notStarted"), icon: Calendar },
+    { label: t("dashboard.participante.myGroup"), value: groupValue, icon: Users, extra: cargoInfo },
+    { label: t("dashboard.participante.pendingDeliveries"), value: "—", icon: FileText },
   ];
 
+  const title = isRepresentante
+    ? t("dashboard.participante.titleRepresentante")
+    : t("dashboard.participante.titleParticipante");
+
   return (
-    <DashboardLayout title={`Painel do ${roleName}`}>
+    <DashboardLayout title={title}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {cards.map((card) => (
           <div key={card.label} className="glass-card p-6 space-y-3">
@@ -116,14 +118,14 @@ export default function ParticipanteDashboard() {
           <div className="glass-card p-6 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="section-label">Tema da Semana</span>
+              <span className="section-label">{t("dashboard.participante.weekTheme")}</span>
             </div>
             <p className="text-foreground">{activeWeek.theme}</p>
           </div>
         ) : (
           <div className="glass-card p-8 flex flex-col items-center justify-center text-center space-y-3">
             <Sparkles className="h-8 w-8 text-muted-foreground" />
-            <p className="text-muted-foreground">O desafio ainda não começou.</p>
+            <p className="text-muted-foreground">{t("dashboard.participante.challengeNotStarted")}</p>
           </div>
         )}
       </div>

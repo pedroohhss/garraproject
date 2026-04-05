@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   CalendarIcon, ClipboardList, Loader2, Pencil, Plus, Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Week {
   id: string;
@@ -41,24 +42,26 @@ interface Activity {
   deliveryCount?: number;
 }
 
-const DELIVERY_TYPES = [
-  { value: "texto", label: "Texto" },
-  { value: "link", label: "Link externo" },
-  { value: "arquivo", label: "Upload de arquivo" },
-  { value: "qualquer", label: "Qualquer um dos três" },
-];
-
-const emptyForm = {
-  title: "",
-  description: "",
-  week_id: "",
-  deadline: null as Date | null,
-  deadlineTime: "23:59",
-  delivery_type: "texto",
-  is_required: true,
-};
-
 export default function AdminActivitiesPage() {
+  const { t } = useTranslation();
+
+  const DELIVERY_TYPES = useMemo(() => [
+    { value: "texto", label: t("adminActivities.deliveryTypes.texto") },
+    { value: "link", label: t("adminActivities.deliveryTypes.link") },
+    { value: "arquivo", label: t("adminActivities.deliveryTypes.arquivo") },
+    { value: "qualquer", label: t("adminActivities.deliveryTypes.qualquer") },
+  ], [t]);
+
+  const emptyForm = {
+    title: "",
+    description: "",
+    week_id: "",
+    deadline: null as Date | null,
+    deadlineTime: "23:59",
+    delivery_type: "texto",
+    is_required: true,
+  };
+
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [deliveryCounts, setDeliveryCounts] = useState<Map<string, number>>(new Map());
@@ -124,7 +127,7 @@ export default function AdminActivitiesPage() {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.description.trim() || !form.week_id) {
-      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      toast({ title: t("common.allFieldsRequired"), variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -148,12 +151,12 @@ export default function AdminActivitiesPage() {
 
     if (editId) {
       const { error } = await supabase.from("activities").update(payload).eq("id", editId);
-      if (error) toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-      else toast({ title: "Atividade atualizada" });
+      if (error) toast({ title: t("common.errorSaving"), description: error.message, variant: "destructive" });
+      else toast({ title: t("adminActivities.toastUpdated") });
     } else {
       const { error } = await supabase.from("activities").insert(payload);
-      if (error) toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
-      else toast({ title: "Atividade criada" });
+      if (error) toast({ title: t("common.errorCreating"), description: error.message, variant: "destructive" });
+      else toast({ title: t("adminActivities.toastCreated") });
     }
 
     setSaving(false);
@@ -167,8 +170,8 @@ export default function AdminActivitiesPage() {
     // Delete related deliveries first
     await supabase.from("deliveries").delete().eq("activity_id", deleteTarget.id);
     const { error } = await supabase.from("activities").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
-    else toast({ title: "Atividade removida" });
+    if (error) toast({ title: t("common.errorRemoving"), description: error.message, variant: "destructive" });
+    else toast({ title: t("adminActivities.toastDeleted") });
     setDeleting(false);
     setDeleteTarget(null);
     await load();
@@ -184,11 +187,11 @@ export default function AdminActivitiesPage() {
   });
 
   return (
-    <DashboardLayout title="Gestão de Atividades">
+    <DashboardLayout title={t("adminActivities.title")}>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-muted-foreground">{activities.length} atividades cadastradas</p>
+        <p className="text-sm text-muted-foreground">{t("adminActivities.activitiesCount", { count: activities.length })}</p>
         <Button size="sm" onClick={openNew} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nova Atividade
+          <Plus className="h-4 w-4" /> {t("adminActivities.newActivity")}
         </Button>
       </div>
 
@@ -203,7 +206,7 @@ export default function AdminActivitiesPage() {
         </div>
       ) : weeks.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhuma semana cadastrada. Crie semanas primeiro.
+          {t("adminActivities.noWeeks")}
         </div>
       ) : (
         <div className="space-y-6">
@@ -214,16 +217,16 @@ export default function AdminActivitiesPage() {
                 <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">
-                    Semana {week.number} — {week.title}
+                    {t("adminActivities.weekLabel", { number: week.number, title: week.title })}
                   </span>
                   {week.is_active && (
-                    <Badge className="bg-primary text-primary-foreground text-xs ml-2">Ativa</Badge>
+                    <Badge className="bg-primary text-primary-foreground text-xs ml-2">{t("common.active_f")}</Badge>
                   )}
-                  <span className="text-xs text-muted-foreground ml-auto">{weekActivities.length} atividades</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{t("adminActivities.activitiesInWeek", { count: weekActivities.length })}</span>
                 </div>
                 {weekActivities.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">
-                    Nenhuma atividade nesta semana.
+                    {t("adminActivities.noActivitiesInWeek")}
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
@@ -236,21 +239,21 @@ export default function AdminActivitiesPage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-medium text-foreground">{activity.title}</span>
                               {activity.is_required && (
-                                <Badge variant="destructive" className="text-xs">Obrigatória</Badge>
+                                <Badge variant="destructive" className="text-xs">{t("adminActivities.required")}</Badge>
                               )}
                               <Badge variant="secondary" className="text-xs capitalize">
                                 {DELIVERY_TYPES.find((t) => t.value === activity.delivery_type)?.label ?? activity.delivery_type}
                               </Badge>
                               {hasDeliveries && (
                                 <Badge variant="outline" className="text-xs">
-                                  {activity.deliveryCount} entrega(s)
+                                  {t("adminActivities.deliveries", { count: activity.deliveryCount })}
                                 </Badge>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
                             {activity.deadline && (
                               <p className={cn("text-xs mt-1", isPastDeadline ? "text-destructive" : "text-muted-foreground")}>
-                                Prazo: {format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm")}
+                                {t("adminActivities.deadline", { date: format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm") })}
                               </p>
                             )}
                           </div>
@@ -286,36 +289,36 @@ export default function AdminActivitiesPage() {
       <Dialog open={showForm} onOpenChange={(o) => !o && setShowForm(false)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editId ? "Editar Atividade" : "Nova Atividade"}</DialogTitle>
+            <DialogTitle>{editId ? t("adminActivities.editActivity") : t("adminActivities.createActivity")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Título *</label>
+              <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldTitle")}</label>
               <Input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Descrição detalhada *</label>
+              <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldDescription")}</label>
               <Textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Semana *</label>
+              <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldWeek")}</label>
               <Select value={form.week_id} onValueChange={(v) => setForm((p) => ({ ...p, week_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecionar semana" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("adminActivities.selectWeek")} /></SelectTrigger>
                 <SelectContent>
                   {weeks.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>Semana {w.number} — {w.title}</SelectItem>
+                    <SelectItem key={w.id} value={w.id}>{t("adminActivities.weekLabel", { number: w.number, title: w.title })}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Prazo (data)</label>
+                <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldDeadlineDate")}</label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.deadline && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.deadline ? format(form.deadline, "dd/MM/yyyy") : "Selecionar"}
+                      {form.deadline ? format(form.deadline, "dd/MM/yyyy") : t("adminActivities.selectDate")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -330,12 +333,12 @@ export default function AdminActivitiesPage() {
                 </Popover>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Horário limite</label>
+                <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldDeadlineTime")}</label>
                 <Input type="time" value={form.deadlineTime} onChange={(e) => setForm((p) => ({ ...p, deadlineTime: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Tipo de entrega</label>
+              <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldDeliveryType")}</label>
               <Select value={form.delivery_type} onValueChange={(v) => setForm((p) => ({ ...p, delivery_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -346,15 +349,15 @@ export default function AdminActivitiesPage() {
               </Select>
             </div>
             <div className="flex items-center justify-between">
-              <label className="text-xs text-muted-foreground font-medium">Atividade obrigatória</label>
+              <label className="text-xs text-muted-foreground font-medium">{t("adminActivities.fieldRequired")}</label>
               <Switch checked={form.is_required} onCheckedChange={(v) => setForm((p) => ({ ...p, is_required: v }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setShowForm(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editId ? "Salvar" : "Criar"}
+              {editId ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -364,16 +367,16 @@ export default function AdminActivitiesPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover atividade?</AlertDialogTitle>
+            <AlertDialogTitle>{t("adminActivities.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              A atividade "{deleteTarget?.title}" será removida permanentemente.
+              {t("adminActivities.deleteDescription", { title: deleteTarget?.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground">
               {deleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Remover
+              {t("common.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

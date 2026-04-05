@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle, CheckCircle2, Clock, FileUp, Link2, Loader2, Send, Type, Upload,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Activity {
   id: string;
@@ -45,13 +46,8 @@ function getStatus(activity: Activity, delivery: Delivery | undefined): Activity
   return "pendente";
 }
 
-const STATUS_CONFIG: Record<ActivityStatus, { label: string; icon: React.ElementType; className: string }> = {
-  pendente: { label: "Pendente", icon: Clock, className: "bg-secondary text-secondary-foreground" },
-  entregue: { label: "Entregue", icon: CheckCircle2, className: "bg-primary/20 text-primary" },
-  atrasado: { label: "Atrasado", icon: AlertTriangle, className: "bg-destructive/20 text-destructive" },
-};
-
 export default function ActivitiesPage() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -60,7 +56,6 @@ export default function ActivitiesPage() {
   const [deliverTarget, setDeliverTarget] = useState<Activity | null>(null);
   const [existingDelivery, setExistingDelivery] = useState<Delivery | null>(null);
 
-  // Delivery form
   const [deliveryType, setDeliveryType] = useState<"texto" | "link" | "arquivo">("texto");
   const [contentText, setContentText] = useState("");
   const [contentLink, setContentLink] = useState("");
@@ -71,9 +66,14 @@ export default function ActivitiesPage() {
   const isRepresentante = profile?.role === "representante";
   const groupId = profile?.group_id;
 
+  const STATUS_CONFIG: Record<ActivityStatus, { label: string; icon: React.ElementType; className: string }> = {
+    pendente: { label: t("activities.statusPending"), icon: Clock, className: "bg-secondary text-secondary-foreground" },
+    entregue: { label: t("activities.statusDelivered"), icon: CheckCircle2, className: "bg-primary/20 text-primary" },
+    atrasado: { label: t("activities.statusLate"), icon: AlertTriangle, className: "bg-destructive/20 text-destructive" },
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
-    // Get active week
     const { data: weekData } = await supabase
       .from("weeks")
       .select("id, number, title")
@@ -86,7 +86,7 @@ export default function ActivitiesPage() {
       setLoading(false);
       return;
     }
-    setActiveWeekTitle(`Semana ${weekData.number} — ${weekData.title}`);
+    setActiveWeekTitle(`${t("common.week")} ${weekData.number} — ${weekData.title}`);
 
     const [activitiesRes, deliveriesRes] = await Promise.all([
       supabase.from("activities").select("*").eq("week_id", weekData.id).order("deadline"),
@@ -97,7 +97,7 @@ export default function ActivitiesPage() {
     setActivities(activitiesRes.data ?? []);
     setDeliveries((deliveriesRes.data ?? []) as Delivery[]);
     setLoading(false);
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -106,7 +106,6 @@ export default function ActivitiesPage() {
     setDeliverTarget(activity);
     setExistingDelivery(existing ?? null);
 
-    // Set allowed delivery type
     const dt = activity.delivery_type;
     if (dt === "qualquer") {
       setDeliveryType("texto");
@@ -128,7 +127,6 @@ export default function ActivitiesPage() {
     try {
       let fileUrl: string | null = existingDelivery?.content_file_url ?? null;
 
-      // Upload file if needed
       if (deliveryType === "arquivo" && file) {
         const ext = file.name.split(".").pop();
         const path = `${groupId}/${deliverTarget.id}/${Date.now()}.${ext}`;
@@ -154,17 +152,17 @@ export default function ActivitiesPage() {
       if (existingDelivery) {
         const { error } = await supabase.from("deliveries").update(payload).eq("id", existingDelivery.id);
         if (error) throw error;
-        toast({ title: "Entrega atualizada!" });
+        toast({ title: t("activities.toastUpdated") });
       } else {
         const { error } = await supabase.from("deliveries").insert(payload);
         if (error) throw error;
-        toast({ title: "Entrega enviada!" });
+        toast({ title: t("activities.toastSent") });
       }
 
       setDeliverTarget(null);
       await load();
     } catch (err: any) {
-      toast({ title: "Erro na entrega", description: err.message, variant: "destructive" });
+      toast({ title: t("activities.toastError"), description: err.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -174,14 +172,13 @@ export default function ActivitiesPage() {
     if (!isRepresentante) return false;
     const isPastDeadline = activity.deadline && new Date(activity.deadline) < new Date();
     const alreadyDelivered = deliveries.some((d) => d.activity_id === activity.id);
-    // Can redeliver before deadline, or if already delivered can update before deadline
     if (isPastDeadline && !alreadyDelivered) return false;
     if (isPastDeadline && alreadyDelivered) return false;
     return true;
   };
 
   return (
-    <DashboardLayout title="Atividades">
+    <DashboardLayout title={t("activities.title")}>
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -193,7 +190,7 @@ export default function ActivitiesPage() {
         </div>
       ) : !activeWeekTitle ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhuma semana ativa no momento.
+          {t("activities.noActiveWeek")}
         </div>
       ) : (
         <>
@@ -203,7 +200,7 @@ export default function ActivitiesPage() {
 
           {activities.length === 0 ? (
             <div className="glass-card p-8 text-center text-muted-foreground">
-              Nenhuma atividade nesta semana.
+              {t("activities.noActivities")}
             </div>
           ) : (
             <div className="space-y-4">
@@ -226,7 +223,7 @@ export default function ActivitiesPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-foreground font-medium">{activity.title}</h3>
                           {activity.is_required && (
-                            <Badge variant="destructive" className="text-xs">Obrigatória</Badge>
+                            <Badge variant="destructive" className="text-xs">{t("activities.required")}</Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
@@ -241,7 +238,7 @@ export default function ActivitiesPage() {
                         "text-xs font-medium",
                         status === "atrasado" ? "text-destructive" : "text-muted-foreground"
                       )}>
-                        Prazo: {format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm")}
+                        {t("activities.deadline", { date: format(new Date(activity.deadline), "dd/MM/yyyy 'às' HH:mm") })}
                       </p>
                     )}
 
@@ -250,14 +247,14 @@ export default function ActivitiesPage() {
                         {canDeliver(activity) ? (
                           <Button size="sm" onClick={() => openDeliver(activity)} className="gap-1.5">
                             <Send className="h-3.5 w-3.5" />
-                            {delivery ? "Reenviar" : "Entregar"}
+                            {delivery ? t("activities.resend") : t("activities.deliver")}
                           </Button>
                         ) : status === "entregue" ? (
                           <p className="text-xs text-primary">
-                            Entregue em {delivery?.submitted_at ? format(new Date(delivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—"}
+                            {t("activities.deliveredAt", { date: delivery?.submitted_at ? format(new Date(delivery.submitted_at), "dd/MM/yyyy 'às' HH:mm") : "—" })}
                           </p>
                         ) : status === "atrasado" ? (
-                          <p className="text-xs text-destructive">Prazo encerrado</p>
+                          <p className="text-xs text-destructive">{t("activities.deadlinePassed")}</p>
                         ) : null}
                       </div>
                     )}
@@ -274,27 +271,26 @@ export default function ActivitiesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {existingDelivery ? "Atualizar entrega" : "Entregar atividade"}
+              {existingDelivery ? t("activities.updateDelivery") : t("activities.deliverActivity")}
             </DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">{deliverTarget?.title}</p>
 
-          {/* Type selector if "qualquer" */}
           {deliverTarget?.delivery_type === "qualquer" && (
             <div className="flex gap-2">
-              {(["texto", "link", "arquivo"] as const).map((t) => (
+              {(["texto", "link", "arquivo"] as const).map((tp) => (
                 <Button
-                  key={t}
+                  key={tp}
                   size="sm"
-                  variant={deliveryType === t ? "default" : "outline"}
-                  onClick={() => setDeliveryType(t)}
+                  variant={deliveryType === tp ? "default" : "outline"}
+                  onClick={() => setDeliveryType(tp)}
                   className="gap-1 capitalize"
                 >
-                  {t === "texto" && <Type className="h-3.5 w-3.5" />}
-                  {t === "link" && <Link2 className="h-3.5 w-3.5" />}
-                  {t === "arquivo" && <FileUp className="h-3.5 w-3.5" />}
-                  {t}
+                  {tp === "texto" && <Type className="h-3.5 w-3.5" />}
+                  {tp === "link" && <Link2 className="h-3.5 w-3.5" />}
+                  {tp === "arquivo" && <FileUp className="h-3.5 w-3.5" />}
+                  {tp}
                 </Button>
               ))}
             </div>
@@ -303,7 +299,7 @@ export default function ActivitiesPage() {
           <div className="space-y-3">
             {deliveryType === "texto" && (
               <Textarea
-                placeholder="Escreva sua entrega..."
+                placeholder={t("activities.textPlaceholder")}
                 value={contentText}
                 onChange={(e) => setContentText(e.target.value)}
                 rows={6}
@@ -312,7 +308,7 @@ export default function ActivitiesPage() {
             {deliveryType === "link" && (
               <Input
                 type="url"
-                placeholder="https://..."
+                placeholder={t("activities.linkPlaceholder")}
                 value={contentLink}
                 onChange={(e) => setContentLink(e.target.value)}
               />
@@ -332,17 +328,17 @@ export default function ActivitiesPage() {
                   className="w-full gap-2"
                 >
                   <Upload className="h-4 w-4" />
-                  {file ? file.name : "Selecionar arquivo (PDF, imagem ou DOC, até 10MB)"}
+                  {file ? file.name : t("activities.selectFile")}
                 </Button>
                 {file && file.size > 10 * 1024 * 1024 && (
-                  <p className="text-xs text-destructive">Arquivo excede 10MB</p>
+                  <p className="text-xs text-destructive">{t("activities.fileTooLarge")}</p>
                 )}
               </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeliverTarget(null)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setDeliverTarget(null)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleSubmitDelivery}
               disabled={
@@ -354,7 +350,7 @@ export default function ActivitiesPage() {
               }
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {existingDelivery ? "Atualizar" : "Enviar"}
+              {existingDelivery ? t("common.update") : t("common.send")}
             </Button>
           </DialogFooter>
         </DialogContent>

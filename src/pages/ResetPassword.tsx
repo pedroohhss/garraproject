@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,6 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the URL token
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsValidSession(true);
@@ -25,7 +26,6 @@ export default function ResetPassword() {
       }
     });
 
-    // Also check if there's already a session (user clicked the link)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsValidSession(true);
@@ -40,12 +40,12 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+      toast.error(t("auth.resetPassword.errorTooShort"));
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("As senhas não coincidem");
+      toast.error(t("auth.resetPassword.errorNoMatch"));
       return;
     }
 
@@ -58,7 +58,7 @@ export default function ResetPassword() {
       return;
     }
 
-    toast.success("Senha atualizada com sucesso!");
+    toast.success(t("auth.resetPassword.successUpdated"));
     await supabase.auth.signOut();
     navigate("/login");
   };
@@ -75,12 +75,12 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass-card w-full max-w-md p-8 space-y-6 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Link inválido</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("auth.resetPassword.invalidLink")}</h1>
           <p className="text-muted-foreground text-sm">
-            Este link de recuperação é inválido ou expirou. Solicite um novo na tela de login.
+            {t("auth.resetPassword.invalidLinkDescription")}
           </p>
           <Button onClick={() => navigate("/login")} className="w-full rounded-[10px]">
-            Voltar ao login
+            {t("auth.resetPassword.backToLogin")}
           </Button>
         </div>
       </div>
@@ -91,13 +91,13 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="glass-card w-full max-w-md p-8 space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Nova senha</h1>
-          <p className="label-sm">Digite sua nova senha abaixo</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("auth.resetPassword.title")}</h1>
+          <p className="label-sm">{t("auth.resetPassword.subtitle")}</p>
         </div>
 
         <form onSubmit={handleReset} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="password" className="label-sm">Nova senha</Label>
+            <Label htmlFor="password" className="label-sm">{t("auth.resetPassword.newPassword")}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -119,7 +119,7 @@ export default function ResetPassword() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="label-sm">Confirmar senha</Label>
+            <Label htmlFor="confirmPassword" className="label-sm">{t("auth.resetPassword.confirmPassword")}</Label>
             <Input
               id="confirmPassword"
               type={showPassword ? "text" : "password"}
@@ -133,7 +133,7 @@ export default function ResetPassword() {
 
           <Button type="submit" disabled={loading} className="w-full rounded-[10px]">
             {loading && <Loader2 className="animate-spin" />}
-            Redefinir senha
+            {t("auth.resetPassword.submit")}
           </Button>
         </form>
       </div>

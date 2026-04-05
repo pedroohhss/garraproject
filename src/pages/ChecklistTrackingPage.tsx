@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Week { id: string; number: number; title: string; is_active: boolean }
 interface Group { id: string; name: string }
@@ -17,6 +18,7 @@ interface Entry {
 }
 
 export default function ChecklistTrackingPage() {
+  const { t } = useTranslation();
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
@@ -74,24 +76,27 @@ export default function ChecklistTrackingPage() {
   };
 
   const maxPoints = criteria.reduce((s, c) => s + (c.points ?? 0), 0);
+  const selectedWeek = weeks.find((w) => w.id === selectedWeekId);
 
   return (
-    <DashboardLayout title="Acompanhamento de Checklist">
+    <DashboardLayout title={t("checklistTracking.title")}>
       <div className="flex items-center gap-3 mb-6">
         <Select value={selectedWeekId} onValueChange={setSelectedWeekId}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Selecionar semana" />
+            <SelectValue placeholder={t("checklistTracking.selectWeek")} />
           </SelectTrigger>
           <SelectContent>
             {weeks.map((w) => (
               <SelectItem key={w.id} value={w.id}>
-                Semana {w.number} — {w.title} {w.is_active ? "(Ativa)" : ""}
+                {w.is_active
+                  ? t("checklistTracking.weekOption", { number: w.number, title: w.title })
+                  : t("checklistTracking.weekOptionInactive", { number: w.number, title: w.title })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         {criteria.length > 0 && (
-          <span className="text-xs text-muted-foreground">{criteria.length} critérios · {maxPoints} pts máx</span>
+          <span className="text-xs text-muted-foreground">{t("checklistTracking.criteriaCount", { count: criteria.length, max: maxPoints })}</span>
         )}
       </div>
 
@@ -102,10 +107,10 @@ export default function ChecklistTrackingPage() {
         </div>
       ) : criteria.length === 0 ? (
         <div className="glass-card p-8 text-center text-muted-foreground">
-          Nenhum critério definido para esta semana.
+          {t("checklistTracking.noCriteria")}
         </div>
       ) : groups.length === 0 ? (
-        <div className="glass-card p-8 text-center text-muted-foreground">Nenhum grupo cadastrado.</div>
+        <div className="glass-card p-8 text-center text-muted-foreground">{t("checklistTracking.noGroups")}</div>
       ) : (
         <div className="space-y-2">
           {groups.map((group) => {
@@ -132,7 +137,9 @@ export default function ChecklistTrackingPage() {
                 <Badge className={cn("text-xs gap-1",
                   isPending ? "bg-destructive/10 text-destructive" : "bg-primary/20 text-primary"
                 )}>
-                  {isPending ? <><Clock className="h-3 w-3" /> Pendente</> : <><CheckCircle2 className="h-3 w-3" /> Preenchido</>}
+                  {isPending
+                    ? <><Clock className="h-3 w-3" /> {t("checklistTracking.pending")}</>
+                    : <><CheckCircle2 className="h-3 w-3" /> {t("checklistTracking.filled")}</>}
                 </Badge>
               </div>
             );
@@ -149,7 +156,7 @@ export default function ChecklistTrackingPage() {
           {detailGroup && (
             <div className="mt-4 space-y-3">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Checklist — {weeks.find((w) => w.id === selectedWeekId)?.title}
+                {t("checklistTracking.sheetTitle", { title: selectedWeek?.title ?? "" })}
               </p>
               {criteria.map((c) => {
                 const entry = getGroupEntries(detailGroup.id).find((e) => e.criterion_id === c.id);
@@ -169,14 +176,14 @@ export default function ChecklistTrackingPage() {
                     )}
                     {entry?.submitted_at && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Enviado em {format(new Date(entry.submitted_at), "dd/MM/yyyy 'às' HH:mm")}
+                        {t("checklistTracking.submittedAt", { date: format(new Date(entry.submitted_at), "dd/MM/yyyy 'às' HH:mm") })}
                       </p>
                     )}
                   </div>
                 );
               })}
               <div className="border-t border-border pt-3 flex justify-between">
-                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-sm text-muted-foreground">{t("checklistTracking.total")}</span>
                 <span className="text-sm font-bold text-foreground">
                   {getGroupPoints(detailGroup.id)}/{maxPoints} pts
                 </span>
