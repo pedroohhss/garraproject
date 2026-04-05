@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ function getWeekStatus(week: Week, activeNumber: number | null): WeekStatus {
 
 export default function AdminWeeksPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const defaultCriteriaByWeek = t("weeks.defaultCriteria", { returnObjects: true }) as Record<string, { description: string; points: number }[]>;
 
   const STATUS_BADGE: Record<WeekStatus, { label: string; className: string }> = {
@@ -60,10 +62,31 @@ export default function AdminWeeksPage() {
     encerrada: { label: t("adminWeeks.inProgress"), className: "bg-muted text-muted-foreground" },
   };
 
-  const [weeks, setWeeks] = useState<Week[]>([]);
-  const [criteria, setCriteria] = useState<Criterion[]>([]);
-  const [entryCounts, setEntryCounts] = useState<Map<string, number>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const { data: adminData, isLoading: loading } = useQuery({
+    queryKey: ["adminWeeks"],
+    queryFn: async () => {
+      const [weeksRes, criteriaRes, entriesRes] = await Promise.all([
+        supabase.from("weeks").select("*").order("number", { ascending: true }),
+        supabase.from("checklist_criteria").select("*"),
+        supabase.from("checklist_entries").select("criterion_id"),
+      ]);
+      const counts = new Map<string, number>();
+      (entriesRes.data ?? []).forEach((e) => {
+        if (e.criterion_id) counts.set(e.criterion_id, (counts.get(e.criterion_id) ?? 0) + 1);
+      });
+      return {
+        weeks: (weeksRes.data ?? []) as Week[],
+        criteria: (criteriaRes.data ?? []) as Criterion[],
+        entryCounts: counts,
+      };
+    },
+  });
+
+  const weeks = adminData?.weeks ?? [];
+  const criteria = adminData?.criteria ?? [];
+  const entryCounts = adminData?.entryCounts ?? new Map<string, number>();
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["adminWeeks"] });
 
   const [activateTarget, setActivateTarget] = useState<Week | null>(null);
   const [activating, setActivating] = useState(false);
@@ -80,26 +103,6 @@ export default function AdminWeeksPage() {
   const [editCriterionId, setEditCriterionId] = useState<string | null>(null);
   const [savingCriterion, setSavingCriterion] = useState(false);
   const [deleteCriterion, setDeleteCriterion] = useState<Criterion | null>(null);
-
-  const loadWeeks = useCallback(async () => {
-    setLoading(true);
-    const [weeksRes, criteriaRes, entriesRes] = await Promise.all([
-      supabase.from("weeks").select("*").order("number", { ascending: true }),
-      supabase.from("checklist_criteria").select("*"),
-      supabase.from("checklist_entries").select("criterion_id"),
-    ]);
-    setWeeks(weeksRes.data ?? []);
-    setCriteria(criteriaRes.data ?? []);
-
-    const counts = new Map<string, number>();
-    (entriesRes.data ?? []).forEach((e) => {
-      if (e.criterion_id) counts.set(e.criterion_id, (counts.get(e.criterion_id) ?? 0) + 1);
-    });
-    setEntryCounts(counts);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { loadWeeks(); }, [loadWeeks]);
 
   const activeWeek = weeks.find((w) => w.is_active) ?? null;
   const activeNumber = activeWeek?.number ?? null;
@@ -128,7 +131,7 @@ export default function AdminWeeksPage() {
         }
       }
       toast({ title: t("adminWeeks.activateTitle", { number: activateTarget.number }) + "!" });
-      await loadWeeks();
+      await invalidate();
     }
     setActivating(false);
     setActivateTarget(null);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -18,98 +18,96 @@ interface GroupRank {
   earliestDelivery: string | null;
 }
 
+async function fetchRanking() {
+  const [weeksRes, groupsRes, criteriaRes, entriesRes, deliveriesRes, activitiesRes] = await Promise.all([
+    supabase.from("weeks").select("id, number, title").order("number"),
+    supabase.from("groups").select("id, name"),
+    supabase.from("checklist_criteria").select("id, week_id, points"),
+    supabase.from("checklist_entries").select("criterion_id, group_id, completed"),
+    supabase.from("deliveries_scores" as any).select("group_id, admin_score, activity_id"),
+    supabase.from("activities").select("id, week_id"),
+  ]);
+
+  const wks = (weeksRes.data ?? []) as Week[];
+  const allGroups = groupsRes.data ?? [];
+  const allCriteria = criteriaRes.data ?? [];
+  const allEntries = entriesRes.data ?? [];
+  const allDeliveries = (deliveriesRes.data ?? []) as unknown as { group_id: string | null; admin_score: number | null; activity_id: string | null }[];
+  const allActivities = activitiesRes.data ?? [];
+
+  const criterionMap = new Map(allCriteria.map((c) => [c.id, c]));
+  const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
+  const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
+  const earliestMap = new Map<string, string>();
+
+  const ranked: GroupRank[] = allGroups.map((g) => {
+    const pointsByWeek = new Map<number, { checklist: number; delivery: number }>();
+    let checklistTotal = 0;
+    let deliveryTotal = 0;
+
+    allEntries.forEach((e) => {
+      if (e.group_id === g.id && e.completed && e.criterion_id) {
+        const crit = criterionMap.get(e.criterion_id);
+        if (crit) {
+          const pts = crit.points ?? 0;
+          checklistTotal += pts;
+          const weekNum = weekIdToNumber.get(crit.week_id ?? "") ?? 0;
+          const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
+          existing.checklist += pts;
+          pointsByWeek.set(weekNum, existing);
+        }
+      }
+    });
+
+    allDeliveries.forEach((d) => {
+      if (d.group_id === g.id && d.admin_score != null && d.admin_score > 0) {
+        deliveryTotal += d.admin_score;
+        const weekId = d.activity_id ? activityWeekMap.get(d.activity_id) : null;
+        const weekNum = weekId ? (weekIdToNumber.get(weekId) ?? 0) : 0;
+        const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
+        existing.delivery += d.admin_score;
+        pointsByWeek.set(weekNum, existing);
+      }
+    });
+
+    return {
+      id: g.id,
+      name: g.name,
+      totalPoints: checklistTotal + deliveryTotal,
+      checklistPoints: checklistTotal,
+      deliveryPoints: deliveryTotal,
+      pointsByWeek,
+      earliestDelivery: earliestMap.get(g.id) ?? null,
+    };
+  });
+
+  ranked.sort((a, b) => {
+    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+    if (!a.earliestDelivery && !b.earliestDelivery) return 0;
+    if (!a.earliestDelivery) return 1;
+    if (!b.earliestDelivery) return -1;
+    return a.earliestDelivery.localeCompare(b.earliestDelivery);
+  });
+
+  return { weeks: wks, groups: ranked };
+}
+
+const PODIUM_ICONS = [Trophy, Medal, Award];
+
 export default function RankingPage() {
   const { t } = useTranslation();
-  const [groups, setGroups] = useState<GroupRank[]>([]);
-  const [weeks, setWeeks] = useState<Week[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const [weeksRes, groupsRes, criteriaRes, entriesRes, deliveriesRes, activitiesRes] = await Promise.all([
-        supabase.from("weeks").select("id, number, title").order("number"),
-        supabase.from("groups").select("id, name"),
-        supabase.from("checklist_criteria").select("id, week_id, points"),
-        supabase.from("checklist_entries").select("criterion_id, group_id, completed"),
-        supabase.from("deliveries_scores" as any).select("group_id, admin_score, activity_id"),
-        supabase.from("activities").select("id, week_id"),
-      ]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["ranking"],
+    queryFn: fetchRanking,
+  });
 
-      const wks = weeksRes.data ?? [];
-      setWeeks(wks);
-
-      const allGroups = groupsRes.data ?? [];
-      const allCriteria = criteriaRes.data ?? [];
-      const allEntries = entriesRes.data ?? [];
-      const allDeliveries = (deliveriesRes.data ?? []) as unknown as { group_id: string | null; admin_score: number | null; activity_id: string | null }[];
-      const allActivities = activitiesRes.data ?? [];
-
-      const criterionMap = new Map(allCriteria.map((c) => [c.id, c]));
-      const weekIdToNumber = new Map(wks.map((w) => [w.id, w.number]));
-      const activityWeekMap = new Map(allActivities.map((a) => [a.id, a.week_id]));
-
-      const earliestMap = new Map<string, string>();
-
-      const ranked: GroupRank[] = allGroups.map((g) => {
-        const pointsByWeek = new Map<number, { checklist: number; delivery: number }>();
-        let checklistTotal = 0;
-        let deliveryTotal = 0;
-
-        allEntries.forEach((e) => {
-          if (e.group_id === g.id && e.completed && e.criterion_id) {
-            const crit = criterionMap.get(e.criterion_id);
-            if (crit) {
-              const pts = crit.points ?? 0;
-              checklistTotal += pts;
-              const weekNum = weekIdToNumber.get(crit.week_id ?? "") ?? 0;
-              const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
-              existing.checklist += pts;
-              pointsByWeek.set(weekNum, existing);
-            }
-          }
-        });
-
-        allDeliveries.forEach((d) => {
-          if (d.group_id === g.id && d.admin_score != null && d.admin_score > 0) {
-            deliveryTotal += d.admin_score;
-            const weekId = d.activity_id ? activityWeekMap.get(d.activity_id) : null;
-            const weekNum = weekId ? (weekIdToNumber.get(weekId) ?? 0) : 0;
-            const existing = pointsByWeek.get(weekNum) ?? { checklist: 0, delivery: 0 };
-            existing.delivery += d.admin_score;
-            pointsByWeek.set(weekNum, existing);
-          }
-        });
-
-        return {
-          id: g.id,
-          name: g.name,
-          totalPoints: checklistTotal + deliveryTotal,
-          checklistPoints: checklistTotal,
-          deliveryPoints: deliveryTotal,
-          pointsByWeek,
-          earliestDelivery: earliestMap.get(g.id) ?? null,
-        };
-      });
-
-      ranked.sort((a, b) => {
-        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-        if (!a.earliestDelivery && !b.earliestDelivery) return 0;
-        if (!a.earliestDelivery) return 1;
-        if (!b.earliestDelivery) return -1;
-        return a.earliestDelivery.localeCompare(b.earliestDelivery);
-      });
-
-      setGroups(ranked);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const PODIUM_ICONS = [Trophy, Medal, Award];
+  const weeks = data?.weeks ?? [];
+  const groups = data?.groups ?? [];
 
   return (
     <DashboardLayout title={t("ranking.title")}>
-      {loading ? (
+      {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="glass-card p-4 flex items-center gap-4">

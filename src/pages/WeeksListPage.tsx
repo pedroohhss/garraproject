@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,11 +46,17 @@ export default function WeeksListPage() {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isAdmin = profile?.role === "admin";
   const rolePrefix = profile?.role === "admin" ? "/admin" : profile?.role === "lider" ? "/lider" : "/participante";
 
-  const [weeks, setWeeks] = useState<Week[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: weeks = [], isLoading: loading } = useQuery({
+    queryKey: ["weeks"],
+    queryFn: async () => {
+      const { data } = await supabase.from("weeks").select("*").order("number", { ascending: true });
+      return (data ?? []) as Week[];
+    },
+  });
 
   const [activateTarget, setActivateTarget] = useState<Week | null>(null);
   const [activating, setActivating] = useState(false);
@@ -67,15 +74,6 @@ export default function WeeksListPage() {
     ativa: { label: t("common.active_f"), className: "bg-primary text-primary-foreground" },
     encerrada: { label: t("weeks.status.ended"), className: "bg-muted text-muted-foreground" },
   };
-
-  const loadWeeks = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from("weeks").select("*").order("number", { ascending: true });
-    setWeeks(data ?? []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { loadWeeks(); }, [loadWeeks]);
 
   const activeWeek = weeks.find((w) => w.is_active) ?? null;
   const activeNumber = activeWeek?.number ?? null;
@@ -100,7 +98,7 @@ export default function WeeksListPage() {
       }
     }
     toast({ title: `${t("common.week")} ${activateTarget.number} ativada!` });
-    await loadWeeks();
+    await queryClient.invalidateQueries({ queryKey: ["weeks"] });
     setActivating(false);
     setActivateTarget(null);
   };
@@ -126,7 +124,7 @@ export default function WeeksListPage() {
     } else {
       toast({ title: t("weeks.challengeEnded") });
     }
-    await loadWeeks();
+    await queryClient.invalidateQueries({ queryKey: ["weeks"] });
     setAdvancing(false);
     setShowAdvance(false);
     setAdvanceStep(0);
@@ -152,7 +150,7 @@ export default function WeeksListPage() {
       ends_at: editForm.ends_at ? format(editForm.ends_at, "yyyy-MM-dd") : null,
     }).eq("id", editTarget.id);
     toast({ title: t("weeks.editTitle", { number: editTarget.number }) });
-    await loadWeeks();
+    await queryClient.invalidateQueries({ queryKey: ["weeks"] });
     setSaving(false);
     setEditTarget(null);
   };

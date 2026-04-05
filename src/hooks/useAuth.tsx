@@ -39,6 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initializedRef = useRef(false);
+  // Tracks which user ID already had its profile fetched by getSession,
+  // so onAuthStateChange(SIGNED_IN) doesn't fetch it a second time.
+  const profileLoadedForRef = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     console.log("[Auth] Fetching profile for user:", userId);
@@ -112,14 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
+          // Skip fetch if getSession already loaded this user's profile
+          if (profileLoadedForRef.current === newSession.user.id) {
+            profileLoadedForRef.current = null;
+            setLoading(false);
+            return;
+          }
           const profileData = await fetchProfile(newSession.user.id);
           if (profileData) {
             setProfile(profileData);
             setError(null);
-          }
-          // Only set error if we don't already have a profile loaded
-          // (avoids overwriting good state from getSession)
-          if (!profileData && !profile) {
+          } else {
             setError("Erro ao carregar perfil do usuário.");
           }
         } else {
@@ -140,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(initialSession?.user ?? null);
 
       if (initialSession?.user) {
+        profileLoadedForRef.current = initialSession.user.id;
         const profileData = await fetchProfile(initialSession.user.id);
         setProfile(profileData);
         if (!profileData) {

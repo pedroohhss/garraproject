@@ -1,15 +1,17 @@
+import { lazy, Suspense } from "react";
 import { useRoutes } from "react-router-dom";
-import NotFound from "@/pages/NotFound";
-import ForbiddenPage from "@/pages/ForbiddenPage";
-import { RoleRedirect, ProtectedRoute } from "./guards";
+import { LoadingScreen, RoleRedirect, ProtectedRoute } from "./guards";
 import { authRoutes } from "./auth.routes";
 import { adminRoutes } from "./admin.routes";
 import { liderRoutes } from "./lider.routes";
 import { participanteRoutes } from "./participante.routes";
 import { profileRoutes } from "./profile.routes";
 
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const ForbiddenPage = lazy(() => import("@/pages/ForbiddenPage"));
+
 export function AppRoutes() {
-  return useRoutes([
+  const element = useRoutes([
     { path: "/", element: <RoleRedirect /> },
     ...authRoutes,
     ...adminRoutes,
@@ -22,4 +24,6 @@ export function AppRoutes() {
     },
     { path: "*", element: <NotFound /> },
   ]);
+
+  return <Suspense fallback={<LoadingScreen />}>{element}</Suspense>;
 }

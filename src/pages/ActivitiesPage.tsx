@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,10 +50,41 @@ function getStatus(activity: Activity, delivery: Delivery | undefined): Activity
 export default function ActivitiesPage() {
   const { t } = useTranslation();
   const { profile } = useAuth();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [activeWeekTitle, setActiveWeekTitle] = useState("");
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const groupId = profile?.group_id;
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["activities", groupId],
+    queryFn: async () => {
+      const { data: weekData } = await supabase
+        .from("weeks")
+        .select("id, number, title")
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!weekData) return { week: null, activities: [] as Activity[], deliveries: [] as Delivery[] };
+
+      const [activitiesRes, deliveriesRes] = await Promise.all([
+        supabase.from("activities").select("*").eq("week_id", weekData.id).order("deadline"),
+        groupId
+          ? supabase.from("deliveries").select("*").eq("group_id", groupId)
+          : Promise.resolve({ data: [] as Delivery[] }),
+      ]);
+      return {
+        week: weekData,
+        activities: (activitiesRes.data ?? []) as Activity[],
+        deliveries: (deliveriesRes.data ?? []) as Delivery[],
+      };
+    },
+    enabled: !!profile,
+  });
+
+  const activities = data?.activities ?? [];
+  const deliveries = data?.deliveries ?? [];
+  const activeWeekTitle = data?.week
+    ? `${t("common.week")} ${data.week.number} — ${data.week.title}`
+    : "";
+
   const [deliverTarget, setDeliverTarget] = useState<Activity | null>(null);
   const [existingDelivery, setExistingDelivery] = useState<Delivery | null>(null);
 
@@ -64,42 +96,12 @@ export default function ActivitiesPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isRepresentante = profile?.role === "representante";
-  const groupId = profile?.group_id;
 
   const STATUS_CONFIG: Record<ActivityStatus, { label: string; icon: React.ElementType; className: string }> = {
     pendente: { label: t("activities.statusPending"), icon: Clock, className: "bg-secondary text-secondary-foreground" },
     entregue: { label: t("activities.statusDelivered"), icon: CheckCircle2, className: "bg-primary/20 text-primary" },
     atrasado: { label: t("activities.statusLate"), icon: AlertTriangle, className: "bg-destructive/20 text-destructive" },
   };
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data: weekData } = await supabase
-      .from("weeks")
-      .select("id, number, title")
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!weekData) {
-      setActivities([]);
-      setActiveWeekTitle("");
-      setLoading(false);
-      return;
-    }
-    setActiveWeekTitle(`${t("common.week")} ${weekData.number} — ${weekData.title}`);
-
-    const [activitiesRes, deliveriesRes] = await Promise.all([
-      supabase.from("activities").select("*").eq("week_id", weekData.id).order("deadline"),
-      groupId
-        ? supabase.from("deliveries").select("*").eq("group_id", groupId)
-        : Promise.resolve({ data: [] as Delivery[] }),
-    ]);
-    setActivities(activitiesRes.data ?? []);
-    setDeliveries((deliveriesRes.data ?? []) as Delivery[]);
-    setLoading(false);
-  }, [groupId, t]);
-
-  useEffect(() => { load(); }, [load]);
 
   const openDeliver = (activity: Activity) => {
     const existing = deliveries.find((d) => d.activity_id === activity.id);
@@ -160,7 +162,7 @@ export default function ActivitiesPage() {
       }
 
       setDeliverTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ["activities", groupId] });
     } catch (err: any) {
       toast({ title: t("activities.toastError"), description: err.message, variant: "destructive" });
     } finally {

@@ -1,7 +1,9 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-import ProfilePage from "@/pages/ProfilePage";
-import EditProfilePage from "@/pages/EditProfilePage";
 import { ProtectedRoute } from "./guards";
+
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const EditProfilePage = lazy(() => import("@/pages/EditProfilePage"));
 
 export const profileRoutes: RouteObject[] = [
   {

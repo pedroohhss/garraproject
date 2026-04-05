@@ -1,8 +1,10 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import ResetPassword from "@/pages/ResetPassword";
 import { PublicRoute } from "./guards";
+
+const Login = lazy(() => import("@/pages/Login"));
+const Register = lazy(() => import("@/pages/Register"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 export const authRoutes: RouteObject[] = [
   {

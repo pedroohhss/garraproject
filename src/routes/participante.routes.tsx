@@ -1,13 +1,15 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-import ParticipanteDashboard from "@/pages/ParticipanteDashboard";
-import WeeksListPage from "@/pages/WeeksListPage";
-import WeekDetailPage from "@/pages/WeekDetailPage";
-import ActivitiesPage from "@/pages/ActivitiesPage";
-import ChecklistPage from "@/pages/ChecklistPage";
-import IdeasPage from "@/pages/IdeasPage";
-import RankingPage from "@/pages/RankingPage";
-import GroupsPage from "@/pages/GroupsPage";
 import { ProtectedRoute } from "./guards";
+
+const ParticipanteDashboard = lazy(() => import("@/pages/ParticipanteDashboard"));
+const WeeksListPage = lazy(() => import("@/pages/WeeksListPage"));
+const WeekDetailPage = lazy(() => import("@/pages/WeekDetailPage"));
+const ActivitiesPage = lazy(() => import("@/pages/ActivitiesPage"));
+const ChecklistPage = lazy(() => import("@/pages/ChecklistPage"));
+const IdeasPage = lazy(() => import("@/pages/IdeasPage"));
+const RankingPage = lazy(() => import("@/pages/RankingPage"));
+const GroupsPage = lazy(() => import("@/pages/GroupsPage"));
 
 const participante = (element: React.ReactNode) => (
   <ProtectedRoute allowedRoles={["participante", "representante"]}>{element}</ProtectedRoute>

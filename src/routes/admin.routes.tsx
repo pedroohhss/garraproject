@@ -1,16 +1,18 @@
+import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-import AdminDashboard from "@/pages/AdminDashboard";
-import AdminUsersPage from "@/pages/AdminUsersPage";
-import AdminWeeksPage from "@/pages/AdminWeeksPage";
-import AdminActivitiesPage from "@/pages/AdminActivitiesPage";
-import AdminChecklistPage from "@/pages/AdminChecklistPage";
-import ChecklistTrackingPage from "@/pages/ChecklistTrackingPage";
-import DeliveryTrackingPage from "@/pages/DeliveryTrackingPage";
-import WeekDetailPage from "@/pages/WeekDetailPage";
-import IdeasPage from "@/pages/IdeasPage";
-import RankingPage from "@/pages/RankingPage";
-import GroupsPage from "@/pages/GroupsPage";
 import { ProtectedRoute } from "./guards";
+
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
+const AdminWeeksPage = lazy(() => import("@/pages/AdminWeeksPage"));
+const AdminActivitiesPage = lazy(() => import("@/pages/AdminActivitiesPage"));
+const AdminChecklistPage = lazy(() => import("@/pages/AdminChecklistPage"));
+const ChecklistTrackingPage = lazy(() => import("@/pages/ChecklistTrackingPage"));
+const DeliveryTrackingPage = lazy(() => import("@/pages/DeliveryTrackingPage"));
+const WeekDetailPage = lazy(() => import("@/pages/WeekDetailPage"));
+const IdeasPage = lazy(() => import("@/pages/IdeasPage"));
+const RankingPage = lazy(() => import("@/pages/RankingPage"));
+const GroupsPage = lazy(() => import("@/pages/GroupsPage"));
 
 const admin = (element: React.ReactNode) => (
   <ProtectedRoute allowedRoles={["admin"]}>{element}</ProtectedRoute>
